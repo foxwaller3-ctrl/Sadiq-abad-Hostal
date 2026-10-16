@@ -21,6 +21,7 @@ import { NotFound } from './pages/public/NotFound.tsx';
 
 // Admin Pages
 import { Login } from './pages/admin/Login.tsx';
+import { ResetPassword } from './pages/admin/ResetPassword.tsx';
 import { Dashboard } from './pages/admin/Dashboard.tsx';
 import { HostelInfoAdmin } from './pages/admin/HostelInfoAdmin.tsx';
 import { RoomsAdmin } from './pages/admin/RoomsAdmin.tsx';
@@ -55,6 +56,7 @@ export default function App() {
 
             {/* Admin Authentication */}
             <Route path="/admin/login" element={<Login />} />
+            <Route path="/admin/reset-password" element={<ResetPassword />} />
 
             {/* Protected Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
