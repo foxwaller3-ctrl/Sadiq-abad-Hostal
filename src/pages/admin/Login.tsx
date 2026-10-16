@@ -8,10 +8,12 @@ import { Card } from '../../components/ui/Card.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('admin@sadiqabadhostel.pk');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('foxwaller3@gmail.com');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -19,6 +21,7 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResetMessage(null);
 
     try {
       await authService.login(email, password);
@@ -28,6 +31,20 @@ export const Login: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Invalid credentials');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    setError(null);
+    setResetMessage(null);
+    setResetLoading(true);
+    try {
+      await authService.requestPasswordReset(email);
+      setResetMessage('If this address is registered, a password reset email will arrive shortly. Open it on this device to set a new password.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to request a password reset.');
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -60,7 +77,7 @@ export const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="admin@sadiqabadhostel.pk"
+              placeholder="foxwaller3@gmail.com"
             />
 
             <Input
@@ -69,15 +86,20 @@ export const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••"
+              placeholder="Enter your password"
             />
 
-            <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 text-xs text-teal-800">
-              <span className="font-bold block mb-0.5">Demo Credentials (Stage A):</span>
-              Email: <code className="font-mono bg-teal-100 px-1 rounded">admin@sadiqabadhostel.pk</code>
-              <br />
-              Password: <code className="font-mono bg-teal-100 px-1 rounded">admin123</code>
+            <div className="flex justify-end">
+              <button type="button" onClick={handlePasswordReset} disabled={resetLoading}
+                className="text-xs font-semibold text-teal-700 hover:text-teal-900 disabled:opacity-50">
+                {resetLoading ? 'Sending reset email…' : 'Forgot password?'}
+              </button>
             </div>
+            {resetMessage && (
+              <div role="status" className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+                {resetMessage}
+              </div>
+            )}
 
             <Button
               type="submit"
