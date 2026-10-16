@@ -52,15 +52,20 @@ export const AdminLayout: React.FC = () => {
 
   useEffect(() => {
     let active = true;
-    inquiriesService.getAll()
-      .then((items) => {
-        if (active) setNewInquiriesCount(items.filter((item) => item.status === 'new').length);
-      })
-      .catch(() => {
-        if (active) setNewInquiriesCount(0);
-      });
+    const refreshCount = () => {
+      inquiriesService.getAll()
+        .then((items) => {
+          if (active) setNewInquiriesCount(items.filter((item) => item.status === 'new').length);
+        })
+        .catch(() => {
+          if (active) setNewInquiriesCount(0);
+        });
+    };
+    refreshCount();
+    const unsubscribe = inquiriesService.subscribe(refreshCount);
     return () => {
       active = false;
+      unsubscribe();
     };
   }, [location.pathname]);
 
