@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { inquiriesService } from '../../services/inquiriesService.ts';
 import { roomsService } from '../../services/roomsService.ts';
-import { mockStore } from '../../services/mockStore.ts';
 import type { Inquiry, Room } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { generateWhatsAppLink } from '../../utils/helpers.ts';
@@ -35,7 +34,6 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    return mockStore.subscribe(loadData);
   }, []);
 
   const newInquiries = inquiries.filter((i) => i.status === 'new');
