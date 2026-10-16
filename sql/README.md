@@ -12,6 +12,7 @@ Create a new Supabase project first, then open **SQL Editor** and run each SQL f
 4. **04_rls.sql** — Row Level Security, access policies, and explicit Data API grants.
 5. **05_storage.sql** — public hostel-media bucket; admin-only upload, replace and delete.
 6. **06_seed.sql** — bilingual sample content.
+7. **08_harden_admin_helper.sql** — hardens the admin predicate with invoker rights. The live project already has this applied; fresh installs should run it last.
 
 **07_admin_bootstrap.md** is a manual setup guide, not SQL. Follow it after the SQL files, when you create the owner's Auth user.
 
