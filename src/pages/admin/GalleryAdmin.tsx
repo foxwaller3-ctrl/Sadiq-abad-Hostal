@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { galleryService } from '../../services/galleryService.ts';
+import { uploadHostelMedia, deleteHostelMedia } from '../../services/mediaService.ts';
 import type { GalleryItem, GalleryCategory } from '../../types/index.ts';
 import { Button } from '../../components/ui/Button.tsx';
 import { Input } from '../../components/ui/Input.tsx';
@@ -20,6 +21,7 @@ export const GalleryAdmin: React.FC = () => {
     sort_order: 1
   });
   const [loading, setLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const loadData = () => {
@@ -42,16 +44,18 @@ export const GalleryAdmin: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.image_url.trim()) {
+    if (!newItem.image_url.trim() && !selectedFile) {
       toast('Image URL is required.', 'error');
       return;
     }
 
     setLoading(true);
     try {
-      await galleryService.create(newItem);
+      const uploadedUrl = selectedFile ? await uploadHostelMedia(selectedFile, 'gallery') : newItem.image_url.trim();
+      await galleryService.create({ ...newItem, image_url: uploadedUrl });
       toast('New photo added to gallery!', 'success');
       setIsModalOpen(false);
+      setSelectedFile(null);
       setNewItem({
         category: 'rooms',
         image_url: '',
@@ -71,7 +75,11 @@ export const GalleryAdmin: React.FC = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this photo from gallery?')) return;
     try {
+      const item = items.find((photo) => photo.id === id);
       await galleryService.remove(id);
+      if (item) {
+        try { await deleteHostelMedia(item.image_url); } catch { /* row removal succeeded; orphaned storage can be cleaned later */ }
+      }
       toast('Photo deleted.', 'info');
       loadData();
     } catch {
@@ -146,13 +154,23 @@ export const GalleryAdmin: React.FC = () => {
         maxWidth="md"
       >
         <form onSubmit={handleSave} className="space-y-4 text-start">
-          <Input
-            label="Image URL"
-            value={newItem.image_url}
-            onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
-            placeholder="https://images.unsplash.com/..."
-            required
-          />
+          <div className="space-y-3">
+            <Input
+              label="Upload image (optional)"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+            />
+            <p className="text-xs text-slate-500">PNG, JPG, WebP or SVG; maximum 5 MB. A selected file is uploaded to the private-write/public-read hostel-media bucket when you save.</p>
+            <Input
+              label="Or use an Image URL"
+              value={newItem.image_url}
+              onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+              placeholder="https://images.unsplash.com/..."
+              required={!selectedFile}
+            />
+            {selectedFile && <p className="text-xs text-teal-700">Selected: {selectedFile.name}</p>}
+          </div>
 
           <Select
             label="Category"
