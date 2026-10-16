@@ -8,37 +8,38 @@ import { PublicLayout } from './layouts/PublicLayout.tsx';
 import { AdminLayout } from './layouts/AdminLayout.tsx';
 
 // Public Pages
-import { Home } from './pages/public/Home.tsx';
-import { About } from './pages/public/About.tsx';
-import { Rooms } from './pages/public/Rooms.tsx';
-import { Facilities } from './pages/public/Facilities.tsx';
-import { Mess } from './pages/public/Mess.tsx';
-import { Gallery } from './pages/public/Gallery.tsx';
-import { Location } from './pages/public/Location.tsx';
-import { RulesFaq } from './pages/public/RulesFaq.tsx';
-import { Contact } from './pages/public/Contact.tsx';
-import { NotFound } from './pages/public/NotFound.tsx';
+const Home = React.lazy(() => import('./pages/public/Home.tsx').then((m) => ({ default: m.Home })));
+const About = React.lazy(() => import('./pages/public/About.tsx').then((m) => ({ default: m.About })));
+const Rooms = React.lazy(() => import('./pages/public/Rooms.tsx').then((m) => ({ default: m.Rooms })));
+const Facilities = React.lazy(() => import('./pages/public/Facilities.tsx').then((m) => ({ default: m.Facilities })));
+const Mess = React.lazy(() => import('./pages/public/Mess.tsx').then((m) => ({ default: m.Mess })));
+const Gallery = React.lazy(() => import('./pages/public/Gallery.tsx').then((m) => ({ default: m.Gallery })));
+const Location = React.lazy(() => import('./pages/public/Location.tsx').then((m) => ({ default: m.Location })));
+const RulesFaq = React.lazy(() => import('./pages/public/RulesFaq.tsx').then((m) => ({ default: m.RulesFaq })));
+const Contact = React.lazy(() => import('./pages/public/Contact.tsx').then((m) => ({ default: m.Contact })));
+const NotFound = React.lazy(() => import('./pages/public/NotFound.tsx').then((m) => ({ default: m.NotFound })));
 
 // Admin Pages
-import { Login } from './pages/admin/Login.tsx';
-import { ResetPassword } from './pages/admin/ResetPassword.tsx';
-import { Dashboard } from './pages/admin/Dashboard.tsx';
-import { HostelInfoAdmin } from './pages/admin/HostelInfoAdmin.tsx';
-import { RoomsAdmin } from './pages/admin/RoomsAdmin.tsx';
-import { FacilitiesAdmin } from './pages/admin/FacilitiesAdmin.tsx';
-import { MessAdmin } from './pages/admin/MessAdmin.tsx';
-import { GalleryAdmin } from './pages/admin/GalleryAdmin.tsx';
-import { RulesFaqAdmin } from './pages/admin/RulesFaqAdmin.tsx';
-import { ReviewsAdmin } from './pages/admin/ReviewsAdmin.tsx';
-import { InquiriesAdmin } from './pages/admin/InquiriesAdmin.tsx';
-import { NoticesAdmin } from './pages/admin/NoticesAdmin.tsx';
-import { SettingsAdmin } from './pages/admin/SettingsAdmin.tsx';
+const Login = React.lazy(() => import('./pages/admin/Login.tsx').then((m) => ({ default: m.Login })));
+const ResetPassword = React.lazy(() => import('./pages/admin/ResetPassword.tsx').then((m) => ({ default: m.ResetPassword })));
+const Dashboard = React.lazy(() => import('./pages/admin/Dashboard.tsx').then((m) => ({ default: m.Dashboard })));
+const HostelInfoAdmin = React.lazy(() => import('./pages/admin/HostelInfoAdmin.tsx').then((m) => ({ default: m.HostelInfoAdmin })));
+const RoomsAdmin = React.lazy(() => import('./pages/admin/RoomsAdmin.tsx').then((m) => ({ default: m.RoomsAdmin })));
+const FacilitiesAdmin = React.lazy(() => import('./pages/admin/FacilitiesAdmin.tsx').then((m) => ({ default: m.FacilitiesAdmin })));
+const MessAdmin = React.lazy(() => import('./pages/admin/MessAdmin.tsx').then((m) => ({ default: m.MessAdmin })));
+const GalleryAdmin = React.lazy(() => import('./pages/admin/GalleryAdmin.tsx').then((m) => ({ default: m.GalleryAdmin })));
+const RulesFaqAdmin = React.lazy(() => import('./pages/admin/RulesFaqAdmin.tsx').then((m) => ({ default: m.RulesFaqAdmin })));
+const ReviewsAdmin = React.lazy(() => import('./pages/admin/ReviewsAdmin.tsx').then((m) => ({ default: m.ReviewsAdmin })));
+const InquiriesAdmin = React.lazy(() => import('./pages/admin/InquiriesAdmin.tsx').then((m) => ({ default: m.InquiriesAdmin })));
+const NoticesAdmin = React.lazy(() => import('./pages/admin/NoticesAdmin.tsx').then((m) => ({ default: m.NoticesAdmin })));
+const SettingsAdmin = React.lazy(() => import('./pages/admin/SettingsAdmin.tsx').then((m) => ({ default: m.SettingsAdmin })));
 
 export default function App() {
   return (
     <I18nProvider>
       <ToastProvider>
         <BrowserRouter>
+          <React.Suspense fallback={<div role="status" className="min-h-[40vh] flex items-center justify-center text-sm font-medium text-teal-800">Loading page…</div>}>
           <Routes>
             {/* Public Website Routes */}
             <Route path="/" element={<PublicLayout />}>
@@ -73,6 +74,7 @@ export default function App() {
               <Route path="settings" element={<SettingsAdmin />} />
             </Route>
           </Routes>
+          </React.Suspense>
         </BrowserRouter>
       </ToastProvider>
     </I18nProvider>
