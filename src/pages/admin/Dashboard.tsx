@@ -34,6 +34,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    return inquiriesService.subscribe(loadData);
   }, []);
 
   const newInquiries = inquiries.filter((i) => i.status === 'new');
