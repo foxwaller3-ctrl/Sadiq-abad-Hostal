@@ -45,7 +45,7 @@ using (is_active and now() between starts_at and ends_at);
 
 -- Column-level INSERT prevents visitors from setting status, IDs, notes, or timestamps.
 create policy inquiries_public_insert on public.inquiries
-for insert to anon, authenticated
+for insert to anon
 with check (status = 'new' and admin_notes is null);
 
 create policy admin_all_hostel_info on public.hostel_info for all to authenticated
@@ -86,5 +86,5 @@ grant select, insert, update, delete on public.hostel_info, public.site_settings
   to authenticated;
 grant select, update, delete on public.inquiries to authenticated;
 grant insert (name, phone, room_type, wants_mess, move_in_date, category, message, source_lang)
-  on public.inquiries to anon, authenticated;
+  on public.inquiries to anon;
 grant insert, update, delete on public.inquiries to authenticated;
