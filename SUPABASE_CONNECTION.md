@@ -4,16 +4,16 @@ The database is provisioned in Supabase project `Sadiqabad-Hostel` (`zyuteumppyr
 
 ## 1. Configure the React app environment
 
-Set both environment variables in Google AI Studio for its current app, and in Cloudflare Pages for each deployed environment. Use the Supabase project settings to copy the URL and **publishable** API key. Do not use a secret/service-role key.
+The app now has the project's URL and **publishable** browser key as safe defaults, so it connects to this database even if the build environment does not yet contain variables. You can override both variables in Google AI Studio or Cloudflare Pages. Never use a secret/service-role key in browser code.
 
 ```dotenv
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_REPLACE_WITH_PROJECT_KEY
 ```
 
-For this project the URL is `https://zyuteumppyrazhswtext.supabase.co`. Obtain the current publishable key from Supabase Dashboard → Project Settings → API Keys. The `.env.example` file intentionally contains placeholders; put actual local values in `.env` (it is git-ignored) and actual deployed values in the hosting environment, not GitHub.
+For this project the URL is `https://zyuteumppyrazhswtext.supabase.co`. The bundled fallback is a publishable key only; it is meant to be visible in client code. RLS protects all database access. Keep any secret/service-role key private. `.env.example` contains optional override placeholders.
 
-After setting variables, restart the AI Studio dev server/rebuild or trigger a fresh Cloudflare deployment. `src/services/supabaseClient.ts` uses mock public data only when the variables are missing; admin login is never mocked.
+If you override variables, restart the AI Studio dev server/rebuild or trigger a fresh Cloudflare deployment. The admin login is always real Supabase Auth; it is never mocked.
 
 ## 2. Admin account
 
