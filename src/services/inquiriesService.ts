@@ -16,6 +16,12 @@ export interface CreateInquiryInput {
   honeypot?: string;
 }
 
+const inquiryListeners = new Set<() => void>();
+
+function notifyInquiryListeners(): void {
+  inquiryListeners.forEach((listener) => listener());
+}
+
 function validateInquiry(input: CreateInquiryInput): void {
   if (!input.name || input.name.trim().length < 2 || input.name.trim().length > 60) {
     throw new Error('Please enter a valid full name (2–60 characters).');
@@ -37,6 +43,11 @@ function validateInquiry(input: CreateInquiryInput): void {
 }
 
 export const inquiriesService = {
+  subscribe(listener: () => void): () => void {
+    inquiryListeners.add(listener);
+    return () => { inquiryListeners.delete(listener); };
+  },
+
   async create(input: CreateInquiryInput): Promise<Inquiry> {
     if (!supabase) {
       await mockStore.delay(120);
@@ -57,6 +68,7 @@ export const inquiriesService = {
       };
       mockStore.inquiries.unshift(newInquiry);
       mockStore.notify();
+      notifyInquiryListeners();
       return { ...newInquiry };
     }
 
@@ -82,6 +94,7 @@ export const inquiriesService = {
     // permission on inquiries, so the submitted record is not read back publicly.
     const { error } = await supabase.from('inquiries').insert(payload);
     throwIfSupabaseError(error);
+    notifyInquiryListeners();
     return {
       id: 'submitted', ...payload, status: 'new', admin_notes: null,
       created_at: new Date().toISOString()
@@ -113,6 +126,7 @@ export const inquiriesService = {
     if (supabase) {
       const { data, error } = await supabase.from('inquiries').update({ status }).eq('id', id).select('*').single();
       throwIfSupabaseError(error);
+      notifyInquiryListeners();
       return asRow<Inquiry>(data, 'Updated inquiry');
     }
     await mockStore.delay();
@@ -120,6 +134,7 @@ export const inquiriesService = {
     if (index === -1) throw new Error('Inquiry not found');
     mockStore.inquiries[index] = { ...mockStore.inquiries[index], status };
     mockStore.notify();
+    notifyInquiryListeners();
     return { ...mockStore.inquiries[index] };
   },
 
@@ -127,6 +142,7 @@ export const inquiriesService = {
     if (supabase) {
       const { data, error } = await supabase.from('inquiries').update({ admin_notes }).eq('id', id).select('*').single();
       throwIfSupabaseError(error);
+      notifyInquiryListeners();
       return asRow<Inquiry>(data, 'Updated inquiry notes');
     }
     await mockStore.delay();
@@ -134,6 +150,7 @@ export const inquiriesService = {
     if (index === -1) throw new Error('Inquiry not found');
     mockStore.inquiries[index] = { ...mockStore.inquiries[index], admin_notes };
     mockStore.notify();
+    notifyInquiryListeners();
     return { ...mockStore.inquiries[index] };
   },
 
@@ -141,10 +158,12 @@ export const inquiriesService = {
     if (supabase) {
       const { error } = await supabase.from('inquiries').delete().eq('id', id);
       throwIfSupabaseError(error);
+      notifyInquiryListeners();
       return;
     }
     await mockStore.delay();
     mockStore.inquiries = mockStore.inquiries.filter((i) => i.id !== id);
     mockStore.notify();
+    notifyInquiryListeners();
   }
 };
