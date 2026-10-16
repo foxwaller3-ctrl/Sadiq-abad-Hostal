@@ -76,6 +76,9 @@ using ((select public.is_admin())) with check ((select public.is_admin()));
 revoke all on function public.is_admin() from public, anon;
 grant execute on function public.is_admin() to authenticated;
 
+-- Enforce inquiry INSERT-only for anon even if default grants were broad.
+revoke all on public.profiles, public.inquiries from anon;
+
 grant select on public.hostel_info, public.site_settings, public.rooms,
   public.facilities, public.mess_plans, public.mess_menu, public.gallery_items,
   public.rules, public.faqs, public.reviews, public.notices to anon, authenticated;
