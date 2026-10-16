@@ -1,6 +1,7 @@
 import { mockStore } from './mockStore.ts';
 import { supabase } from './supabaseClient.ts';
 import type { Room } from '../types/index.ts';
+import type { TablesInsert, TablesUpdate } from '../types/database.ts';
 import { asRow, asRows, throwIfSupabaseError } from './serviceHelpers.ts';
 
 export const roomsService = {
@@ -48,7 +49,7 @@ export const roomsService = {
 
   async create(roomData: Omit<Room, 'id' | 'created_at' | 'updated_at'>): Promise<Room> {
     if (supabase) {
-      const { data, error } = await supabase.from('rooms').insert(roomData).select('*').single();
+      const { data, error } = await supabase.from('rooms').insert(roomData as unknown as TablesInsert<'rooms'>).select('*').single();
       throwIfSupabaseError(error);
       return asRow<Room>(data, 'Created room');
     }
@@ -62,7 +63,7 @@ export const roomsService = {
   async update(id: string, patch: Partial<Room>): Promise<Room> {
     if (supabase) {
       const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...safePatch } = patch;
-      const { data, error } = await supabase.from('rooms').update(safePatch).eq('id', id).select('*').single();
+      const { data, error } = await supabase.from('rooms').update(safePatch as unknown as TablesUpdate<'rooms'>).eq('id', id).select('*').single();
       throwIfSupabaseError(error);
       return asRow<Room>(data, 'Updated room');
     }
