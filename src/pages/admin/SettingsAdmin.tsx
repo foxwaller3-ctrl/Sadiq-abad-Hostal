@@ -150,10 +150,10 @@ export const SettingsAdmin: React.FC = () => {
         <Card className="p-6 bg-slate-50 border-slate-200 text-xs space-y-2">
           <div className="flex items-center gap-2 font-bold text-slate-800">
             <Lock className="w-4 h-4 text-teal-700" />
-            <span>Admin Authentication (Stage C Supabase Auth)</span>
+            <span>Admin Authentication (Supabase Auth)</span>
           </div>
           <p className="text-slate-600 leading-relaxed">
-            In Stage A, mock session is active. During Stage C Supabase connection, password reset and single-owner Supabase Auth credential management will be active here.
+            Admin sign-in is handled by Supabase Auth and access is limited to the owner account with an admin profile. Use “Forgot password?” on the login screen to receive a password-reset email. Public registration is not offered on the website.
           </p>
         </Card>
 
