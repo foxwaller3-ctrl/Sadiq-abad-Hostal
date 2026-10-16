@@ -19,7 +19,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { authService } from '../services/authService.ts';
-import { mockStore } from '../services/mockStore.ts';
+import { inquiriesService } from '../services/inquiriesService.ts';
 import { useI18n } from '../i18n/I18nContext.tsx';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher.tsx';
 
@@ -32,22 +32,37 @@ export const AdminLayout: React.FC = () => {
   const { t, lang } = useI18n();
 
   useEffect(() => {
-    authService.getSession().then((session) => {
-      if (!session.user) {
-        navigate('/admin/login', { replace: true });
-      } else {
+    let active = true;
+    authService.getSession()
+      .then((session) => {
+        if (!active) return;
+        if (!session.user) {
+          navigate('/admin/login', { replace: true });
+          return;
+        }
         setLoading(false);
-      }
-    });
-
-    const updateCounts = () => {
-      const newCount = mockStore.inquiries.filter((i) => i.status === 'new').length;
-      setNewInquiriesCount(newCount);
+      })
+      .catch(() => {
+        if (active) navigate('/admin/login', { replace: true });
+      });
+    return () => {
+      active = false;
     };
-
-    updateCounts();
-    return mockStore.subscribe(updateCounts);
   }, [navigate]);
+
+  useEffect(() => {
+    let active = true;
+    inquiriesService.getAll()
+      .then((items) => {
+        if (active) setNewInquiriesCount(items.filter((item) => item.status === 'new').length);
+      })
+      .catch(() => {
+        if (active) setNewInquiriesCount(0);
+      });
+    return () => {
+      active = false;
+    };
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     await authService.logout();
