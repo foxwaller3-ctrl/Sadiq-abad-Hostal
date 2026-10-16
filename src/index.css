@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0f766e;
+  --color-primary-dark: #115e59;
+  --color-accent: #f59e0b;
+  --font-urdu: 'Noto Nastaliq Urdu', serif;
+}
+
+/* Custom scrollbar and utilities */
+html {
+  scroll-behavior: smooth;
+}
+
+[dir="rtl"] {
+  font-family: 'Noto Nastaliq Urdu', system-ui, -apple-system, sans-serif;
+  line-height: 1.85;
+}
+
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] p,
+[dir="rtl"] span,
+[dir="rtl"] a,
+[dir="rtl"] button {
+  line-height: 1.85;
+}
+
+/* Numeric text & phone numbers forced LTR */
+.num-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+}

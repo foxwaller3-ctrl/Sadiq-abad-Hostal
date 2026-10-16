@@ -1,0 +1,8 @@
+{
+  "name": "Sadiqabad Student Hostel",
+  "description": "Official website for Sadiqabad Student Hostel – Safe, clean, and affordable rooms with mess, WiFi, and CCTV in Sadiqabad.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
