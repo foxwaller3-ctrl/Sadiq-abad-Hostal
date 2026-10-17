@@ -36,4 +36,4 @@ RLS is enabled on all 13 public tables. Anonymous users can read public content,
 - Replace placeholder phone, WhatsApp, email, address, fees, weekly menu, hostel rules, facilities and admission notice with owner-approved information.
 - Add real gallery photos. Reviews and gallery are intentionally empty of fabricated content.
 - Verify production and local environment variables, owner login/password reset, all CRUD screens, inquiry submit/read isolation, and image upload/delete.
-- Re-run security advisors after schema changes.
+- Re-run security advisors after schema changes..
