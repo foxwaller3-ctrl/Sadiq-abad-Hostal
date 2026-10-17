@@ -84,3 +84,16 @@ export function isNoticeActive(notice: { is_active: boolean; starts_at: string; 
   const end = new Date(notice.ends_at).getTime();
   return now >= start && now <= end;
 }
+
+/**
+ * Normalizes image URLs:
+ * Resolves Kommodo share links (https://kommodo.ai/i/...) to the local high-res asset /logo.png
+ */
+export function normalizeImageUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.includes('0IV3pZTemc49bUwLxmEI') || trimmed.includes('kommodo.ai/i/')) {
+    return '/logo.png';
+  }
+  return trimmed;
+}

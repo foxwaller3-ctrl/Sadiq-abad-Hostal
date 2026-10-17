@@ -11,11 +11,16 @@ import {
   Building,
   ArrowRight,
   MessageCircle,
-  Phone
+  Phone,
+  Image as ImageIcon,
+  Settings
 } from 'lucide-react';
 import { inquiriesService } from '../../services/inquiriesService.ts';
 import { roomsService } from '../../services/roomsService.ts';
-import type { Inquiry, Room } from '../../types/index.ts';
+import { hostelInfoService } from '../../services/hostelInfoService.ts';
+import { mockStore } from '../../services/mockStore.ts';
+import { normalizeImageUrl } from '../../utils/helpers.ts';
+import type { Inquiry, Room, HostelInfo } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { generateWhatsAppLink } from '../../utils/helpers.ts';
 import { Card } from '../../components/ui/Card.tsx';
@@ -25,16 +30,23 @@ import { Badge } from '../../components/ui/Badge.tsx';
 export const Dashboard: React.FC = () => {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [hostelInfo, setHostelInfo] = useState<HostelInfo | null>(null);
   const { lang, t } = useI18n();
 
   const loadData = () => {
     inquiriesService.getAll().then(setInquiries);
     roomsService.getAll().then(setRooms);
+    hostelInfoService.get().then(setHostelInfo);
   };
 
   useEffect(() => {
     loadData();
-    return inquiriesService.subscribe(loadData);
+    const unsubInquiries = inquiriesService.subscribe(loadData);
+    const unsubMock = mockStore.subscribe(loadData);
+    return () => {
+      unsubInquiries();
+      unsubMock();
+    };
   }, []);
 
   const newInquiries = inquiries.filter((i) => i.status === 'new');
@@ -68,12 +80,51 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link to="/admin/hostel-info">
+            <Button variant="outline" size="sm" icon={<ImageIcon className="w-4 h-4 text-teal-700" />}>
+              Manage Logo
+            </Button>
+          </Link>
           <Link to="/admin/inquiries">
             <Button variant="accent" size="sm" icon={<Inbox className="w-4 h-4" />}>
               View All Inquiries ({inquiries.length})
             </Button>
           </Link>
         </div>
+      </div>
+
+      {/* Active Branding / Logo Strip */}
+      <div className="p-4 rounded-2xl bg-white border border-teal-100 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-xs p-1 flex items-center justify-center overflow-hidden shrink-0">
+            <img
+              src={normalizeImageUrl(hostelInfo?.logo_url)}
+              alt="Official Logo"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/logo.png';
+              }}
+            />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-slate-900">
+                Official Hostel Logo (لوگو فعال ہے)
+              </span>
+              <span className="text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full">
+                Active Everywhere
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5 truncate max-w-md">
+              {hostelInfo?.logo_url || 'https://kommodo.ai/i/0IV3pZTemc49bUwLxmEI'}
+            </p>
+          </div>
+        </div>
+        <Link to="/admin/hostel-info" className="shrink-0">
+          <Button variant="secondary" size="sm" icon={<Settings className="w-3.5 h-3.5" />}>
+            Configure Logo
+          </Button>
+        </Link>
       </div>
 
       {/* 4 Stat Cards */}

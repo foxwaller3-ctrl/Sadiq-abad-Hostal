@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, Lock, Mail, ArrowLeft, KeyRound } from 'lucide-react';
+import { ShieldCheck, Lock, Mail, ArrowLeft, KeyRound, Building2 } from 'lucide-react';
 import { authService } from '../../services/authService.ts';
+import { hostelInfoService } from '../../services/hostelInfoService.ts';
+import { normalizeImageUrl } from '../../utils/helpers.ts';
+import type { HostelInfo } from '../../types/index.ts';
 import { Input } from '../../components/ui/Input.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
@@ -14,8 +17,13 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [hostelInfo, setHostelInfo] = useState<HostelInfo | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    hostelInfoService.get().then(setHostelInfo);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +59,22 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-start">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="w-16 h-16 rounded-2xl bg-teal-600 flex items-center justify-center text-white mx-auto shadow-lg mb-4">
-          <ShieldCheck className="w-8 h-8" />
-        </div>
+        {hostelInfo?.logo_url ? (
+          <div className="w-16 h-16 rounded-2xl bg-white p-1.5 border border-slate-700 shadow-xl mx-auto mb-4 flex items-center justify-center overflow-hidden">
+            <img
+              src={normalizeImageUrl(hostelInfo.logo_url)}
+              alt="Hostel Logo"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = '/logo.png';
+              }}
+            />
+          </div>
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-teal-600 flex items-center justify-center text-white mx-auto shadow-lg mb-4">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+        )}
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
           Hostel Admin Portal
         </h2>

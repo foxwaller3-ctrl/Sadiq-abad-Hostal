@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
 import { Save, Settings as SettingsIcon, MessageSquare, Search, Lock } from 'lucide-react';
+import { LogoSettingsCard } from '../../components/admin/LogoSettingsCard.tsx';
 
 export const SettingsAdmin: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -39,9 +40,9 @@ export const SettingsAdmin: React.FC = () => {
     <div className="space-y-6 text-start max-w-4xl mx-auto">
       <div className="flex items-center justify-between pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Website & SEO Settings</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Website & Branding Settings</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Configure search engine optimization, default language, and WhatsApp templates.
+            Configure official hostel logo, search engine optimization, default language, and WhatsApp templates.
           </p>
         </div>
         <Button
@@ -54,6 +55,9 @@ export const SettingsAdmin: React.FC = () => {
           Save Settings
         </Button>
       </div>
+
+      {/* Official Hostel Logo Section */}
+      <LogoSettingsCard />
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* SEO Meta Configuration */}

@@ -5,17 +5,34 @@ import { useI18n } from '../../i18n/I18nContext.tsx';
 import { LanguageSwitcher } from './LanguageSwitcher.tsx';
 import { Button } from '../ui/Button.tsx';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
-import { pickLang } from '../../utils/helpers.ts';
+import { mockStore } from '../../services/mockStore.ts';
+import { pickLang, normalizeImageUrl } from '../../utils/helpers.ts';
 import type { HostelInfo } from '../../types/index.ts';
 
 export const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [hostelInfo, setHostelInfo] = useState<HostelInfo | null>(null);
+  const [hostelInfo, setHostelInfo] = useState<HostelInfo>(() => mockStore.hostelInfo);
   const { lang, t, dir } = useI18n();
   const location = useLocation();
 
+  const [logoFailed, setLogoFailed] = useState(false);
+
   useEffect(() => {
-    hostelInfoService.get().then(setHostelInfo);
+    let active = true;
+    const fetchInfo = () => {
+      hostelInfoService.get().then((info) => {
+        if (active) {
+          setHostelInfo(info);
+          setLogoFailed(false);
+        }
+      });
+    };
+    fetchInfo();
+    const unsubscribe = mockStore.subscribe(fetchInfo);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   // Close drawer when route changes
@@ -36,6 +53,7 @@ export const Header: React.FC = () => {
   ];
 
   const hostelName = hostelInfo ? pickLang(hostelInfo, 'name', lang) : 'Sadiqabad Student Hostel';
+  const logoUrl = normalizeImageUrl(hostelInfo?.logo_url);
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
@@ -43,9 +61,26 @@ export const Header: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo & Brand Name */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-xl bg-teal-700 flex items-center justify-center text-white shadow-md group-hover:bg-teal-800 transition duration-200">
-              <Building2 className="w-6 h-6" />
-            </div>
+            {logoUrl && !logoFailed ? (
+              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200/80 shadow-md p-1 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition duration-200">
+                <img
+                  src={logoUrl}
+                  alt={hostelName}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    if ((e.currentTarget as HTMLImageElement).src !== window.location.origin + '/logo.png') {
+                      (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                    } else {
+                      setLogoFailed(true);
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="w-11 h-11 rounded-xl bg-teal-700 flex items-center justify-center text-white shadow-md group-hover:bg-teal-800 transition duration-200 shrink-0">
+                <Building2 className="w-6 h-6" />
+              </div>
+            )}
             <div className="flex flex-col text-start">
               <span className="font-extrabold text-base md:text-lg text-slate-900 tracking-tight leading-tight group-hover:text-teal-700 transition">
                 {hostelName}

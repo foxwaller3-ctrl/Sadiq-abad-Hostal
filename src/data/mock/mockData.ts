@@ -36,7 +36,7 @@ export const initialHostelInfo: HostelInfo = {
     instagram: 'https://instagram.com',
     youtube: 'https://youtube.com'
   },
-  logo_url: '',
+  logo_url: 'https://kommodo.ai/i/0IV3pZTemc49bUwLxmEI',
   hostel_type: 'boys'
 };
 

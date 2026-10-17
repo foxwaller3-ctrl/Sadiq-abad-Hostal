@@ -20,6 +20,10 @@ import {
 } from 'lucide-react';
 import { authService } from '../services/authService.ts';
 import { inquiriesService } from '../services/inquiriesService.ts';
+import { hostelInfoService } from '../services/hostelInfoService.ts';
+import { mockStore } from '../services/mockStore.ts';
+import { pickLang, normalizeImageUrl } from '../utils/helpers.ts';
+import type { HostelInfo } from '../types/index.ts';
 import { useI18n } from '../i18n/I18nContext.tsx';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher.tsx';
 
@@ -27,9 +31,25 @@ export const AdminLayout: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newInquiriesCount, setNewInquiriesCount] = useState(0);
+  const [hostelInfo, setHostelInfo] = useState<HostelInfo>(() => mockStore.hostelInfo);
   const navigate = useNavigate();
   const location = useLocation();
   const { t, lang } = useI18n();
+
+  useEffect(() => {
+    let active = true;
+    const fetchInfo = () => {
+      hostelInfoService.get().then((info) => {
+        if (active) setHostelInfo(info);
+      });
+    };
+    fetchInfo();
+    const unsubscribe = mockStore.subscribe(fetchInfo);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -109,11 +129,26 @@ export const AdminLayout: React.FC = () => {
       <aside className="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 shrink-0 border-r border-slate-800">
         <div className="p-5 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-bold text-white text-sm leading-tight">Admin Portal</h2>
+            {hostelInfo?.logo_url ? (
+              <div className="w-10 h-10 rounded-xl bg-white p-1 border border-slate-700 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                <img
+                  src={normalizeImageUrl(hostelInfo.logo_url)}
+                  alt="Hostel Logo"
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+            )}
+            <div className="overflow-hidden text-start">
+              <h2 className="font-bold text-white text-sm leading-tight truncate">
+                {hostelInfo ? pickLang(hostelInfo, 'name', lang) : 'Admin Portal'}
+              </h2>
               <span className="text-[11px] text-teal-400">Owner Dashboard</span>
             </div>
           </div>
@@ -182,7 +217,19 @@ export const AdminLayout: React.FC = () => {
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-            <span className="text-xs md:text-sm font-semibold text-slate-500">
+            {hostelInfo?.logo_url && (
+              <div className="w-8 h-8 rounded-lg bg-white p-0.5 border border-slate-200 shadow-2xs flex items-center justify-center overflow-hidden shrink-0">
+                <img
+                  src={normalizeImageUrl(hostelInfo.logo_url)}
+                  alt="Hostel Logo"
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                  }}
+                />
+              </div>
+            )}
+            <span className="text-xs md:text-sm font-semibold text-slate-700">
               {lang === 'ur' ? 'صادق آباد اسٹوڈنٹ ہاسٹل ایڈمن' : 'Sadiqabad Student Hostel Admin'}
             </span>
           </div>

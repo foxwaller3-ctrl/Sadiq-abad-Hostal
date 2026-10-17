@@ -6,7 +6,8 @@ import {
   getAvailabilityStatus,
   pickLang,
   getDayName,
-  isNoticeActive
+  isNoticeActive,
+  normalizeImageUrl
 } from './helpers.ts';
 
 test('validatePakistaniPhone recognizes valid Pakistani formats', () => {
@@ -92,3 +93,13 @@ test('isNoticeActive tests range validity', () => {
   };
   assert.equal(isNoticeActive(inactiveNotice), false);
 });
+
+test('normalizeImageUrl resolves Kommodo share links to /logo.png and trims URLs', () => {
+  assert.equal(normalizeImageUrl('https://kommodo.ai/i/0IV3pZTemc49bUwLxmEI'), '/logo.png');
+  assert.equal(normalizeImageUrl(' https://kommodo.ai/i/0IV3pZTemc49bUwLxmEI  '), '/logo.png');
+  assert.equal(normalizeImageUrl('https://example.com/custom-logo.png'), 'https://example.com/custom-logo.png');
+  assert.equal(normalizeImageUrl(''), '');
+  assert.equal(normalizeImageUrl(null), '');
+  assert.equal(normalizeImageUrl(undefined), '');
+});
+

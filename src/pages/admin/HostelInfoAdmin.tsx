@@ -7,7 +7,9 @@ import { Select } from '../../components/ui/Select.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
-import { Save, Building2 } from 'lucide-react';
+import { Save, Building2, CheckCircle, RefreshCw } from 'lucide-react';
+import { normalizeImageUrl } from '../../utils/helpers.ts';
+import { LogoSettingsCard } from '../../components/admin/LogoSettingsCard.tsx';
 
 export const HostelInfoAdmin: React.FC = () => {
   const [info, setInfo] = useState<HostelInfo | null>(null);
@@ -15,7 +17,9 @@ export const HostelInfoAdmin: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    hostelInfoService.get().then(setInfo);
+    hostelInfoService.get().then((data) => {
+      setInfo(data);
+    });
   }, []);
 
   if (!info) {
@@ -27,7 +31,7 @@ export const HostelInfoAdmin: React.FC = () => {
     setLoading(true);
     try {
       await hostelInfoService.update(info);
-      toast('Hostel information updated successfully!', 'success');
+      toast('Hostel information & Logo updated successfully!', 'success');
     } catch (err) {
       toast('Failed to save changes.', 'error');
     } finally {
@@ -37,11 +41,11 @@ export const HostelInfoAdmin: React.FC = () => {
 
   return (
     <div className="space-y-6 text-start max-w-4xl mx-auto">
-      <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Hostel Profile & Contact Info</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Hostel Profile & Logo Settings</h1>
           <p className="text-xs text-slate-500 mt-1">
-            These details appear across the header, footer, hero, and location page.
+            Configure official hostel logo, branding, contact details, and address.
           </p>
         </div>
         <Button
@@ -55,7 +59,15 @@ export const HostelInfoAdmin: React.FC = () => {
         </Button>
       </div>
 
+      {/* Official Hostel Logo Section */}
+      <LogoSettingsCard
+        onSaved={(newLogoUrl) => {
+          setInfo((prev) => (prev ? { ...prev, logo_url: newLogoUrl } : null));
+        }}
+      />
+
       <form onSubmit={handleSave} className="space-y-6">
+
         {/* Basic Brand Info */}
         <Card className="p-6 bg-white space-y-4">
           <h3 className="font-bold text-sm text-slate-800 border-b pb-2 flex items-center gap-2">

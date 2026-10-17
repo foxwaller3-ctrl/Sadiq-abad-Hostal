@@ -3,18 +3,35 @@ import { Link } from 'react-router-dom';
 import { Building2, Phone, Mail, MapPin, Clock, ShieldCheck, Heart } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
-import { pickLang } from '../../utils/helpers.ts';
+import { mockStore } from '../../services/mockStore.ts';
+import { pickLang, normalizeImageUrl } from '../../utils/helpers.ts';
 import type { HostelInfo } from '../../types/index.ts';
 
 export const Footer: React.FC = () => {
-  const [hostelInfo, setHostelInfo] = useState<HostelInfo | null>(null);
+  const [hostelInfo, setHostelInfo] = useState<HostelInfo>(() => mockStore.hostelInfo);
+  const [logoFailed, setLogoFailed] = useState(false);
   const { lang, t } = useI18n();
 
   useEffect(() => {
-    hostelInfoService.get().then(setHostelInfo);
+    let active = true;
+    const fetchInfo = () => {
+      hostelInfoService.get().then((info) => {
+        if (active) {
+          setHostelInfo(info);
+          setLogoFailed(false);
+        }
+      });
+    };
+    fetchInfo();
+    const unsubscribe = mockStore.subscribe(fetchInfo);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   const hostelName = hostelInfo ? pickLang(hostelInfo, 'name', lang) : 'Sadiqabad Student Hostel';
+  const logoUrl = normalizeImageUrl(hostelInfo?.logo_url);
   const address = hostelInfo ? pickLang(hostelInfo, 'address', lang) : 'Sadiqabad, Punjab';
   const officeHours = hostelInfo ? pickLang(hostelInfo, 'office_hours', lang) : '9:00 AM – 9:00 PM';
   const phone = hostelInfo?.phone || '0300-1234567';
@@ -27,9 +44,26 @@ export const Footer: React.FC = () => {
           {/* Col 1: Hostel branding & description */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white">
-                <Building2 className="w-6 h-6" />
-              </div>
+              {logoUrl && !logoFailed ? (
+                <div className="w-11 h-11 rounded-xl bg-white p-1 border border-slate-700 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                  <img
+                    src={logoUrl}
+                    alt={hostelName}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      if ((e.currentTarget as HTMLImageElement).src !== window.location.origin + '/logo.png') {
+                        (e.currentTarget as HTMLImageElement).src = '/logo.png';
+                      } else {
+                        setLogoFailed(true);
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shrink-0">
+                  <Building2 className="w-6 h-6" />
+                </div>
+              )}
               <div>
                 <h3 className="font-bold text-lg text-white leading-tight">
                   {hostelName}
