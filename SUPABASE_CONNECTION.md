@@ -1,6 +1,6 @@
 # Supabase connection — Sadiqabad Student Hostel
 
-The database is provisioned in Supabase project `Sadiqabad-Hostel` (`zyuteumppyrazhswtext`). The owner Auth user `foxwaller3@gmail.com` has a confirmed email and `profiles.role = 'admin'`.
+The database is provisioned in Supabase project `Sadiqabad-Hostel` (`zyuteumppyrazhswtext`). The configured owner Auth user has a confirmed email and a `profiles.role = 'admin'` row.
 
 ## 1. Configure the React app environment
 
@@ -17,7 +17,7 @@ If you override variables, restart the AI Studio dev server/rebuild or trigger a
 
 ## 2. Admin account
 
-The verified Auth user `foxwaller3@gmail.com` already has an admin profile. Sign in at `/admin/login` with its Supabase password. If you do not know the password, choose **Forgot password?**. The app sends a recovery email to that address and provides `/admin/reset-password` to set a new password.
+Only the pre-provisioned owner account with `profiles.role = 'admin'` can enter the admin area. The owner email and password must not be hard-coded in source files or documentation. Sign in at `/admin/login` with the owner's Supabase Auth email and password. If you need to rotate the password, choose **Forgot password?** on the login page; the app provides `/admin/reset-password` to set a new password.
 
 For password recovery on a hosted deployment, open Supabase Dashboard → Authentication → URL Configuration and add the final website origin to the allowed redirect URLs, including `/admin/reset-password`. Add the local test origin such as `http://localhost:3000/admin/reset-password` when using local Vite. The final Cloudflare hostname is not yet known, so it cannot be added from this repository change.
 
@@ -36,4 +36,5 @@ RLS is enabled on all 13 public tables. Anonymous users can read public content,
 - Replace placeholder phone, WhatsApp, email, address, fees, weekly menu, hostel rules, facilities and admission notice with owner-approved information.
 - Add real gallery photos. Reviews and gallery are intentionally empty of fabricated content.
 - Verify production and local environment variables, owner login/password reset, all CRUD screens, inquiry submit/read isolation, and image upload/delete.
+- Remove any previously saved admin password from the browser/password manager on shared devices, rotate the password if it may have been exposed, and disable public sign-ups in Supabase Authentication settings.
 - Re-run security advisors after schema changes..
