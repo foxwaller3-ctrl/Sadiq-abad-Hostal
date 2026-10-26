@@ -12,6 +12,19 @@ const envKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 const projectUrl = envUrl && !envUrl.includes('YOUR_PROJECT_REF') ? envUrl : DEFAULT_PROJECT_URL;
 const publishableKey = envKey && !envKey.includes('REPLACE_ME') ? envKey : DEFAULT_PUBLISHABLE_KEY;
 
+const authStorage = typeof window !== 'undefined' ? window.sessionStorage : undefined;
+
+// Remove any legacy persistent Supabase session from this browser origin.
+// New sessions are stored for the current tab session instead of across browser restarts.
+if (typeof window !== 'undefined') {
+  try {
+    const projectRef = new URL(projectUrl).hostname.split('.')[0];
+    window.localStorage.removeItem(`sb-${projectRef}-auth-token`);
+  } catch {
+    // Storage may be unavailable in restricted browser contexts.
+  }
+}
+
 export const isSupabaseConfigured = Boolean(projectUrl && publishableKey);
 
 export const supabase = isSupabaseConfigured
@@ -19,7 +32,8 @@ export const supabase = isSupabaseConfigured
       auth: {
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        persistSession: true
+        persistSession: true,
+        ...(authStorage ? { storage: authStorage } : {})
       }
     })
   : null;
