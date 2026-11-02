@@ -7,8 +7,9 @@ import { Select } from '../../components/ui/Select.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
-import { Save, Building2, CheckCircle, RefreshCw } from 'lucide-react';
-import { normalizeImageUrl } from '../../utils/helpers.ts';
+import { Save, Building2 } from 'lucide-react';
+import { extractMapEmbedUrl } from '../../utils/helpers.ts';
+import { mockStore } from '../../services/mockStore.ts';
 import { LogoSettingsCard } from '../../components/admin/LogoSettingsCard.tsx';
 
 export const HostelInfoAdmin: React.FC = () => {
@@ -17,9 +18,13 @@ export const HostelInfoAdmin: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    hostelInfoService.get().then((data) => {
-      setInfo(data);
-    });
+    const load = () => {
+      hostelInfoService.get().then((data) => {
+        setInfo(data);
+      });
+    };
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   if (!info) {
@@ -28,12 +33,20 @@ export const HostelInfoAdmin: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (info.map_embed_url.trim() && !extractMapEmbedUrl(info.map_embed_url)) {
+      toast('Google Maps URL must be a valid https://www.google.com/maps/embed... URL or iframe snippet.', 'error');
+      return;
+    }
     setLoading(true);
     try {
-      await hostelInfoService.update(info);
+      const updated = await hostelInfoService.update({
+        ...info,
+        map_embed_url: extractMapEmbedUrl(info.map_embed_url)
+      });
+      setInfo(updated);
       toast('Hostel information & Logo updated successfully!', 'success');
     } catch (err) {
-      toast('Failed to save changes.', 'error');
+      toast(err instanceof Error ? err.message : 'Failed to save changes.', 'error');
     } finally {
       setLoading(false);
     }
@@ -180,9 +193,14 @@ export const HostelInfoAdmin: React.FC = () => {
           </div>
 
           <Input
-            label="Google Maps Embed URL (starts with https://www.google.com/maps/embed...)"
+            label="Google Maps Embed URL or <iframe> Code"
             value={info.map_embed_url}
-            onChange={(e) => setInfo({ ...info, map_embed_url: e.target.value })}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const extracted = raw.includes('<iframe') ? extractMapEmbedUrl(raw) : raw;
+              setInfo({ ...info, map_embed_url: extracted || raw });
+            }}
+            helperText="Paste either the https://www.google.com/maps/embed?... URL or the full Google Maps Share -> Embed a map HTML code."
             placeholder="https://www.google.com/maps/embed?..."
           />
         </Card>

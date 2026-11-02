@@ -9,9 +9,10 @@ import {
   GraduationCap,
   Bus,
   ShoppingBag,
-  Building
+  HeartPulse
 } from 'lucide-react';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
+import { mockStore } from '../../services/mockStore.ts';
 import type { HostelInfo } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { pickLang, generateWhatsAppLink } from '../../utils/helpers.ts';
@@ -24,19 +25,25 @@ export const Location: React.FC = () => {
   const [hostelInfo, setHostelInfo] = useState<HostelInfo | null>(null);
 
   useEffect(() => {
-    hostelInfoService.get().then(setHostelInfo);
+    const load = () => hostelInfoService.get().then(setHostelInfo);
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
-  const address = hostelInfo ? pickLang(hostelInfo, 'address', lang) : 'Sadiqabad, Punjab';
-  const officeHours = hostelInfo ? pickLang(hostelInfo, 'office_hours', lang) : '9:00 AM – 9:00 PM';
-  const phone = hostelInfo?.phone || '0300-1234567';
-  const whatsapp = hostelInfo?.whatsapp || '0300-1234567';
+  const address = hostelInfo
+    ? pickLang(hostelInfo, 'address', lang)
+    : 'Main College Road, Near Punjab College, Sadiqabad, Punjab';
+  const officeHours = hostelInfo
+    ? pickLang(hostelInfo, 'office_hours', lang)
+    : 'Daily 8:00 AM – 10:00 PM';
+  const phone = hostelInfo?.phone || '0304-7862410';
+  const whatsapp = hostelInfo?.whatsapp || '0304-7862410';
   const mapUrl =
     hostelInfo?.map_embed_url ||
     'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d111244.69800531557!2d70.05267398188164!3d28.307525283457193!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39375e2a22ab072d%3A0xc3191cb142646c07!2sSadiqabad%2C%20Rahim%20Yar%20Khan%2C%20Punjab!5e0!3m2!1sen!2s!4v1700000000000!5m2!1sen!2s';
 
   const directionsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    'Sadiqabad Student Hostel Kacha Sadiq Road Sadiqabad Punjab'
+    hostelInfo?.address_en || 'Main College Road Near Punjab College Sadiqabad Rahim Yar Khan Punjab'
   )}`;
 
   const nearbyPlaces = [
@@ -58,7 +65,7 @@ export const Location: React.FC = () => {
     {
       title: lang === 'ur' ? 'تحصیل ہیڈکوارٹر ہسپتال' : 'Civil / THQ Hospital Sadiqabad',
       distance: lang === 'ur' ? '۸ منٹ ڈرائیو' : '8 mins drive',
-      icon: Building
+      icon: HeartPulse
     }
   ];
 
@@ -72,7 +79,7 @@ export const Location: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+          <span className="text-xs font-semibold text-teal-700">
             {lang === 'ur' ? 'آسان رسائی' : 'Easy Access'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -163,8 +170,9 @@ export const Location: React.FC = () => {
             />
           </div>
           <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 px-2">
-            <span className="text-xs text-slate-500">
-              📍 Sadiqabad, District Rahim Yar Khan, Punjab, Pakistan
+            <span className="text-xs text-slate-500 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+              <span>Main College Road, Sadiqabad · District Rahim Yar Khan, Punjab</span>
             </span>
             <a
               href={directionsLink}
@@ -195,7 +203,7 @@ export const Location: React.FC = () => {
                     <Icon className="w-5 h-5" />
                   </div>
                   <h4 className="font-bold text-sm text-slate-900 mb-1">{place.title}</h4>
-                  <span className="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full inline-block">
+                  <span className="text-xs font-semibold text-teal-700">
                     {place.distance}
                   </span>
                 </div>

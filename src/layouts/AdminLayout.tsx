@@ -16,7 +16,8 @@ import {
   ExternalLink,
   Menu,
   X,
-  ShieldCheck
+  ShieldCheck,
+  ClipboardList
 } from 'lucide-react';
 import { authService } from '../services/authService.ts';
 import { inquiriesService } from '../services/inquiriesService.ts';
@@ -114,6 +115,7 @@ export const AdminLayout: React.FC = () => {
     },
     { to: '/admin/hostel-info', label: t('admin.hostelInfo'), icon: Building },
     { to: '/admin/rooms', label: t('admin.rooms'), icon: Bed },
+    { to: '/admin/beds', label: t('admin.bedsReport'), icon: ClipboardList },
     { to: '/admin/facilities', label: t('admin.facilities'), icon: Sparkles },
     { to: '/admin/mess', label: t('admin.mess'), icon: Utensils },
     { to: '/admin/gallery', label: t('admin.gallery'), icon: Image },

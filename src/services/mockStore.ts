@@ -10,7 +10,8 @@ import {
   initialFaqs,
   initialReviews,
   initialNotices,
-  initialInquiries
+  initialInquiries,
+  initialBedAllocations
 } from '../data/mock/mockData.ts';
 import type {
   HostelInfo,
@@ -24,7 +25,8 @@ import type {
   Faq,
   Review,
   Notice,
-  Inquiry
+  Inquiry,
+  BedAllocation
 } from '../types/index.ts';
 
 class MockDataStore {
@@ -40,6 +42,7 @@ class MockDataStore {
   reviews: Review[] = [...initialReviews];
   notices: Notice[] = [...initialNotices];
   inquiries: Inquiry[] = [...initialInquiries];
+  bedAllocations: BedAllocation[] = [...initialBedAllocations];
 
   private listeners: (() => void)[] = [];
 

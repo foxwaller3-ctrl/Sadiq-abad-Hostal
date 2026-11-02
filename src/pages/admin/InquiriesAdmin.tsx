@@ -3,25 +3,18 @@ import { inquiriesService } from '../../services/inquiriesService.ts';
 import { mockStore } from '../../services/mockStore.ts';
 import type { Inquiry, InquiryStatus } from '../../types/index.ts';
 import { Button } from '../../components/ui/Button.tsx';
-import { Input } from '../../components/ui/Input.tsx';
 import { Textarea } from '../../components/ui/Textarea.tsx';
 import { Badge } from '../../components/ui/Badge.tsx';
 import { Modal } from '../../components/ui/Modal.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
 import { generateWhatsAppLink } from '../../utils/helpers.ts';
 import {
-  Inbox,
   Search,
   Phone,
   MessageCircle,
-  Clock,
-  Calendar,
-  CheckCircle2,
-  XCircle,
-  FileText,
-  User,
   Trash2,
-  ArrowRight
+  Download,
+  AlertTriangle
 } from 'lucide-react';
 
 export const InquiriesAdmin: React.FC = () => {
@@ -31,6 +24,8 @@ export const InquiriesAdmin: React.FC = () => {
   const [activeInquiry, setActiveInquiry] = useState<Inquiry | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Inquiry | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { toast } = useToast();
 
   const loadInquiries = () => {
@@ -39,7 +34,12 @@ export const InquiriesAdmin: React.FC = () => {
 
   useEffect(() => {
     loadInquiries();
-    return mockStore.subscribe(loadInquiries);
+    const unsubRealtime = inquiriesService.subscribe(loadInquiries);
+    const unsubMock = mockStore.subscribe(loadInquiries);
+    return () => {
+      unsubRealtime();
+      unsubMock();
+    };
   }, []);
 
   const filteredInquiries = inquiries.filter((inq) => {
@@ -83,16 +83,75 @@ export const InquiriesAdmin: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this inquiry record?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await inquiriesService.remove(id);
-      toast('Inquiry deleted.', 'info');
-      setActiveInquiry(null);
+      await inquiriesService.remove(deleteTarget.id);
+      toast('Inquiry record deleted.', 'info');
+      if (activeInquiry?.id === deleteTarget.id) {
+        setActiveInquiry(null);
+      }
+      setDeleteTarget(null);
       loadInquiries();
     } catch {
-      toast('Failed to delete.', 'error');
+      toast('Failed to delete inquiry.', 'error');
+    } finally {
+      setDeleting(false);
     }
+  };
+
+  const handleExportCsv = () => {
+    if (filteredInquiries.length === 0) {
+      toast('No inquiries to export.', 'info');
+      return;
+    }
+
+    const escapeCsv = (val: unknown) => {
+      const str = String(val ?? '');
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const headers = [
+      'Submitted At',
+      'Applicant Name',
+      'Phone',
+      'Category',
+      'Preferred Room',
+      'Wants Mess',
+      'Move-In Date',
+      'Status',
+      'Message',
+      'Admin Notes'
+    ];
+
+    const rows = filteredInquiries.map((inq) => [
+      new Date(inq.created_at).toISOString(),
+      inq.name,
+      inq.phone,
+      inq.category,
+      inq.room_type || 'Any',
+      inq.wants_mess === true ? 'Yes' : inq.wants_mess === false ? 'No' : 'Unspecified',
+      inq.move_in_date || '',
+      inq.status,
+      inq.message || '',
+      inq.admin_notes || ''
+    ]);
+
+    const csvContent =
+      '\uFEFF' +
+      [headers.map(escapeCsv).join(','), ...rows.map((r) => r.map(escapeCsv).join(','))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sadiqabad-hostel-inquiries-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast(`Exported ${filteredInquiries.length} inquiries to CSV.`, 'success');
   };
 
   const getStatusBadge = (status: InquiryStatus) => {
@@ -115,29 +174,37 @@ export const InquiriesAdmin: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Admission Inquiries Management</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Track student applications, follow up via WhatsApp, and manage booking statuses.
+            Track student applications, follow up via WhatsApp, export records, and manage booking statuses.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900">
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold text-amber-800 tabular-nums whitespace-nowrap">
             {inquiries.filter((i) => i.status === 'new').length} New Pending
           </span>
+          <Button
+            variant="outline"
+            size="sm"
+            icon={<Download className="w-4 h-4" />}
+            onClick={handleExportCsv}
+          >
+            Download CSV
+          </Button>
         </div>
       </div>
 
       {/* Filters and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs">
-        {/* Status Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-none">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-white rounded-2xl border border-slate-200">
+        {/* Status Filter Controls */}
+        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto w-full sm:w-auto scrollbar-none">
           {['all', 'new', 'contacted', 'booked', 'rejected'].map((st) => (
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-xl capitalize whitespace-nowrap transition cursor-pointer ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg capitalize whitespace-nowrap transition cursor-pointer tabular-nums ${
                 selectedStatus === st
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               {st} ({st === 'all' ? inquiries.length : inquiries.filter((i) => i.status === st).length})
@@ -147,19 +214,20 @@ export const InquiriesAdmin: React.FC = () => {
 
         {/* Search */}
         <div className="w-full sm:w-64 relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
             placeholder="Search name or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search inquiries by name or phone"
             className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-700"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-start text-xs border-collapse">
             <thead>
@@ -176,7 +244,7 @@ export const InquiriesAdmin: React.FC = () => {
               {filteredInquiries.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-10 text-center text-slate-500">
-                    No inquiries found.
+                    No inquiries match your current filter.
                   </td>
                 </tr>
               ) : (
@@ -194,7 +262,7 @@ export const InquiriesAdmin: React.FC = () => {
                       onClick={() => handleOpenDetail(inq)}
                       className="hover:bg-teal-50/40 cursor-pointer transition"
                     >
-                      <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
+                      <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap tabular-nums">
                         {dateStr}
                       </td>
                       <td className="py-3 px-4">
@@ -203,7 +271,7 @@ export const InquiriesAdmin: React.FC = () => {
                           {inq.category}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-700 whitespace-nowrap num-ltr">
+                      <td className="py-3 px-4 font-mono text-slate-700 whitespace-nowrap num-ltr tabular-nums">
                         {inq.phone}
                       </td>
                       <td className="py-3 px-4 text-slate-700">
@@ -248,7 +316,7 @@ export const InquiriesAdmin: React.FC = () => {
                 <span className="text-slate-500">Status:</span>
                 {getStatusBadge(activeInquiry.status)}
               </div>
-              <span className="text-slate-400 text-xs font-mono">
+              <span className="text-slate-400 text-xs font-mono tabular-nums">
                 {new Date(activeInquiry.created_at).toLocaleString()}
               </span>
             </div>
@@ -261,7 +329,7 @@ export const InquiriesAdmin: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-500 block text-xs">Mobile Number</span>
-                <span className="font-bold text-slate-900 font-mono num-ltr">
+                <span className="font-bold text-slate-900 font-mono num-ltr tabular-nums">
                   {activeInquiry.phone}
                 </span>
               </div>
@@ -299,9 +367,9 @@ export const InquiriesAdmin: React.FC = () => {
             {activeInquiry.message && (
               <div>
                 <span className="font-semibold text-slate-700 block mb-1">
-                  Applicant Message / Notes:
+                  Applicant Message / Selected Room Notes:
                 </span>
-                <p className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 italic">
+                <p className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-700">
                   "{activeInquiry.message}"
                 </p>
               </div>
@@ -320,7 +388,7 @@ export const InquiriesAdmin: React.FC = () => {
               <a
                 href={generateWhatsAppLink(
                   activeInquiry.phone,
-                  `Assalam o Alaikum ${activeInquiry.name}, I am contacting you from Sadiqabad Student Hostel regarding your inquiry.`
+                  `Assalam o Alaikum ${activeInquiry.name}, I am contacting you from Sadiqabad Student Hostel regarding your room booking inquiry.`
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -371,14 +439,15 @@ export const InquiriesAdmin: React.FC = () => {
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <Textarea
                 label="Admin Internal Notes (Private)"
-                placeholder="e.g. Called on 16 Oct, requested Double Sharing with friend, visiting tomorrow..."
+                placeholder="e.g. Called applicant, requested 2-Sharing room with college friend, visiting tomorrow..."
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 rows={2}
               />
               <div className="flex justify-between items-center">
                 <button
-                  onClick={() => handleDelete(activeInquiry.id)}
+                  type="button"
+                  onClick={() => setDeleteTarget(activeInquiry)}
                   className="text-xs text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -388,6 +457,38 @@ export const InquiriesAdmin: React.FC = () => {
                   Save Notes
                 </Button>
               </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <Modal
+          isOpen={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          title="Delete Inquiry Record"
+          maxWidth="sm"
+        >
+          <div className="space-y-4 text-start">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                Permanently delete the inquiry record from <strong className="font-semibold">{deleteTarget.name}</strong> ({deleteTarget.phone})?
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="secondary" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                loading={deleting}
+                onClick={handleConfirmDelete}
+              >
+                Delete Inquiry
+              </Button>
             </div>
           </div>
         </Modal>

@@ -6,6 +6,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 }
 
@@ -14,6 +15,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
+  footer,
   maxWidth = 'lg'
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
@@ -80,6 +82,11 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
         <div className="p-6 overflow-y-auto">{children}</div>
+        {footer && (
+          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/90 shrink-0">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

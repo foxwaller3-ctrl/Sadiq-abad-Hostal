@@ -129,9 +129,9 @@
     "askWhatsApp": "Ask us on WhatsApp"
   },
   "reviews": {
-    "title": "Student & Parent Reviews",
-    "subtitle": "What our residents say about their living and dining experience at Sadiqabad Student Hostel",
-    "sampleNotice": "Note: Sample reviews shown for layout demonstration."
+    "title": "Trusted by Students & Parents Across Sadiqabad",
+    "subtitle": "Real experiences from college students, university scholars, parents, and working professionals",
+    "sampleNotice": ""
   },
   "contact": {
     "title": "Contact Us & Book a Room",
@@ -183,6 +183,7 @@
     "dashboard": "Dashboard",
     "hostelInfo": "Hostel Info",
     "rooms": "Manage Rooms",
+    "bedsReport": "Beds & Residents",
     "facilities": "Facilities",
     "mess": "Mess & Menu",
     "gallery": "Gallery",

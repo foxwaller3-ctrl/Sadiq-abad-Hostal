@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Maximize2 } from 'lucide-react';
+import {
+  Maximize2,
+  Images,
+  BedDouble,
+  UtensilsCrossed,
+  BookOpen,
+  Bath,
+  Building2,
+  Compass
+} from 'lucide-react';
 import { galleryService } from '../../services/galleryService.ts';
-import type { GalleryItem, GalleryCategory } from '../../types/index.ts';
+import { mockStore } from '../../services/mockStore.ts';
+import type { GalleryItem } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
-import { pickLang } from '../../utils/helpers.ts';
+import { pickLang, normalizeImageUrl } from '../../utils/helpers.ts';
 import { Lightbox } from '../../components/ui/Lightbox.tsx';
 import { SeoHead } from '../../components/common/SeoHead.tsx';
 import { EmptyState } from '../../components/ui/States.tsx';
@@ -15,17 +25,19 @@ export const Gallery: React.FC = () => {
   const [activeLightboxIndex, setActiveLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    galleryService.getPublished().then(setItems);
+    const load = () => galleryService.getPublished().then(setItems);
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   const categories = [
-    { id: 'all', label: t('gallery.catAll') },
-    { id: 'rooms', label: t('gallery.catRooms') },
-    { id: 'mess', label: t('gallery.catMess') },
-    { id: 'study_area', label: t('gallery.catStudy') },
-    { id: 'bathrooms', label: t('gallery.catBathrooms') },
-    { id: 'building', label: t('gallery.catBuilding') },
-    { id: 'surroundings', label: t('gallery.catSurroundings') }
+    { id: 'all', label: t('gallery.catAll'), Icon: Images },
+    { id: 'rooms', label: t('gallery.catRooms'), Icon: BedDouble },
+    { id: 'mess', label: t('gallery.catMess'), Icon: UtensilsCrossed },
+    { id: 'study_area', label: t('gallery.catStudy'), Icon: BookOpen },
+    { id: 'bathrooms', label: t('gallery.catBathrooms'), Icon: Bath },
+    { id: 'building', label: t('gallery.catBuilding'), Icon: Building2 },
+    { id: 'surroundings', label: t('gallery.catSurroundings'), Icon: Compass }
   ];
 
   const filteredItems = items.filter((item) => {
@@ -62,7 +74,7 @@ export const Gallery: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-10">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+          <span className="text-xs font-semibold text-teal-700">
             {lang === 'ur' ? 'تصویریں' : 'Visual Tour'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -73,21 +85,26 @@ export const Gallery: React.FC = () => {
           </p>
         </div>
 
-        {/* Category Filter Chips */}
+        {/* Category Filter Tabs */}
         <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-3 mb-10 scrollbar-none">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCat(cat.id)}
-              className={`px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition duration-150 whitespace-nowrap cursor-pointer ${
-                selectedCat === cat.id
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const CatIcon = cat.Icon;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCat(cat.id)}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition duration-150 whitespace-nowrap shrink-0 cursor-pointer ${
+                  selectedCat === cat.id
+                    ? 'bg-teal-700 text-white shadow-xs'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                <CatIcon className="w-4 h-4 shrink-0" />
+                <span>{cat.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Gallery Grid */}
@@ -111,10 +128,17 @@ export const Gallery: React.FC = () => {
                   className="group relative rounded-2xl overflow-hidden bg-slate-200 aspect-[4/3] cursor-pointer shadow-xs hover:shadow-xl transition-all duration-300"
                 >
                   <img
-                    src={item.image_url}
+                    src={normalizeImageUrl(item.image_url) || '/images/hero-hostel.jpg'}
                     alt={caption || 'Hostel photo'}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      if (!target.src.endsWith('/images/hero-hostel.jpg')) {
+                        target.src = '/images/hero-hostel.jpg';
+                      }
+                    }}
                   />
                   {/* Hover Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 flex flex-col justify-end text-start">

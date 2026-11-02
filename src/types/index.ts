@@ -173,3 +173,41 @@ export interface AuthSession {
     role: 'admin';
   } | null;
 }
+
+export type BedStatus = 'occupied' | 'vacant' | 'reserved' | 'maintenance';
+export type StayDurationUnit = 'months' | 'days';
+export type BedPaymentStatus = 'paid' | 'pending' | 'partial';
+export type ResidentCategory = 'student' | 'job_holder';
+
+export interface BedAllocation {
+  id: string;
+  room_id: string;
+  room_slug?: string;
+  bed_number: number;
+  unit_label?: string;
+  status: BedStatus;
+  resident_name: string;
+  resident_phone: string;
+  cnic_or_id?: string;
+  resident_category: ResidentCategory;
+  institution_or_workplace?: string;
+  check_in_date: string; // YYYY-MM-DD
+  duration_value: number;
+  duration_unit: StayDurationUnit;
+  check_out_date: string; // YYYY-MM-DD
+  agreed_rent: number;
+  security_deposit: number;
+  payment_status: BedPaymentStatus;
+  notes?: string;
+  updated_at?: string;
+}
+
+export interface BedRosterItem {
+  key: string;
+  room: Room;
+  bed_number: number;
+  unit_label: string;
+  allocation: BedAllocation | null;
+  status: BedStatus;
+}
+

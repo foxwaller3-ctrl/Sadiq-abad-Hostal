@@ -7,16 +7,22 @@ import { Select } from '../../components/ui/Select.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
-import { Save, Settings as SettingsIcon, MessageSquare, Search, Lock } from 'lucide-react';
+import { Save, MessageSquare, Search, Lock, Database, RefreshCw } from 'lucide-react';
 import { LogoSettingsCard } from '../../components/admin/LogoSettingsCard.tsx';
+import { syncRealisticDataToSupabase } from '../../services/supabaseSeedSync.ts';
+import { mockStore } from '../../services/mockStore.ts';
 
 export const SettingsAdmin: React.FC = () => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStep, setSyncStep] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
-    settingsService.get().then(setSettings);
+    const load = () => settingsService.get().then(setSettings);
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   if (!settings) {
@@ -58,6 +64,44 @@ export const SettingsAdmin: React.FC = () => {
 
       {/* Official Hostel Logo Section */}
       <LogoSettingsCard />
+
+      {/* Production Database & Media Sync Section */}
+      <Card className="p-6 bg-white border-teal-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+            <Database className="w-4 h-4 text-teal-700" />
+            <span>One-Click Supabase Production Data & Media Sync</span>
+          </h3>
+          <p className="text-xs text-slate-600 leading-relaxed">
+            {syncing
+              ? syncStep
+              : 'Uploads all high-resolution room & campus photos to your hostel-media Storage bucket and updates rooms, prices, mess menu, facilities, rules, FAQs, and gallery in Supabase.'}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          loading={syncing}
+          icon={<RefreshCw className="w-4 h-4" />}
+          onClick={async () => {
+            setSyncing(true);
+            setSyncStep('Starting Supabase sync...');
+            try {
+              const res = await syncRealisticDataToSupabase((step) => setSyncStep(step));
+              toast(res.summary, 'success');
+              settingsService.get().then(setSettings);
+            } catch (err) {
+              toast(err instanceof Error ? err.message : 'Sync failed.', 'error');
+            } finally {
+              setSyncing(false);
+              setSyncStep('');
+            }
+          }}
+          className="shrink-0"
+        >
+          {syncing ? 'Syncing...' : 'Sync All Data to Supabase'}
+        </Button>
+      </Card>
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* SEO Meta Configuration */}

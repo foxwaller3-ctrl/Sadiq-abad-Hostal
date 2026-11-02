@@ -1,52 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Wifi,
-  Droplet,
-  Zap,
-  Flame,
-  Wind,
-  Utensils,
-  Shirt,
-  BookOpen,
-  Video,
-  ShieldCheck,
-  Bike,
-  Sparkles,
-  Bed,
-  CheckCircle2,
-  PhoneCall
-} from 'lucide-react';
+import { CheckCircle2, PhoneCall } from 'lucide-react';
 import { facilitiesService } from '../../services/facilitiesService.ts';
+import { mockStore } from '../../services/mockStore.ts';
 import type { Facility } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { pickLang } from '../../utils/helpers.ts';
 import { Card } from '../../components/ui/Card.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { SeoHead } from '../../components/common/SeoHead.tsx';
-
-const iconMap: Record<string, React.FC<{ className?: string }>> = {
-  wifi: Wifi,
-  droplet: Droplet,
-  zap: Zap,
-  flame: Flame,
-  wind: Wind,
-  utensils: Utensils,
-  shirt: Shirt,
-  'book-open': BookOpen,
-  video: Video,
-  'shield-check': ShieldCheck,
-  bike: Bike,
-  sparkles: Sparkles,
-  bed: Bed
-};
+import { FacilityIcon } from '../../components/common/SemanticIcon.tsx';
 
 export const Facilities: React.FC = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const { lang, t } = useI18n();
 
   useEffect(() => {
-    facilitiesService.getPublished().then(setFacilities);
+    const load = () => facilitiesService.getPublished().then(setFacilities);
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   return (
@@ -59,7 +31,7 @@ export const Facilities: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+          <span className="text-xs font-semibold text-teal-700">
             {lang === 'ur' ? 'جدید رہائشی سہولیات' : 'Comfort & Convenience'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -73,7 +45,6 @@ export const Facilities: React.FC = () => {
         {/* 13 Facilities Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {facilities.map((fac) => {
-            const IconComponent = iconMap[fac.icon_url] || Sparkles;
             const title = pickLang(fac, 'title', lang);
             const desc = pickLang(fac, 'description', lang);
 
@@ -81,7 +52,11 @@ export const Facilities: React.FC = () => {
               <Card key={fac.id} className="p-6 text-start flex flex-col justify-between" hoverable>
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-700 flex items-center justify-center mb-4">
-                    <IconComponent className="w-6 h-6" />
+                    <FacilityIcon
+                      iconKey={fac.icon_url}
+                      fallbackText={fac.title_en}
+                      className="w-6 h-6"
+                    />
                   </div>
                   <h3 className="font-bold text-lg text-slate-900 mb-2">{title}</h3>
                   <p className="text-sm text-slate-600 leading-relaxed">{desc}</p>
@@ -112,7 +87,12 @@ export const Facilities: React.FC = () => {
               </Button>
             </Link>
             <Link to="/contact">
-              <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-slate-900" icon={<PhoneCall className="w-4 h-4" />}>
+              <Button
+                variant="outlineDark"
+                size="lg"
+                className="border-white hover:bg-white hover:text-slate-900 whitespace-nowrap"
+                icon={<PhoneCall className="w-4 h-4" />}
+              >
                 {t('facilities.ctaBtn')}
               </Button>
             </Link>

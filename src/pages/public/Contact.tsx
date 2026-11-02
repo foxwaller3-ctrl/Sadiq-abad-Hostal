@@ -8,21 +8,21 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Send,
-  Building2,
-  Calendar,
-  User,
-  HelpCircle
+  Send
 } from 'lucide-react';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
 import { roomsService } from '../../services/roomsService.ts';
 import { inquiriesService } from '../../services/inquiriesService.ts';
-import type { HostelInfo, Room, RoomType, Inquiry } from '../../types/index.ts';
+import { mockStore } from '../../services/mockStore.ts';
+import type { HostelInfo, Room, Inquiry } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import {
   pickLang,
+  formatCurrency,
   validatePakistaniPhone,
-  generateWhatsAppLink
+  generateWhatsAppLink,
+  getRoomPrimaryImage,
+  ROOM_TYPE_DEFAULT_IMAGES
 } from '../../utils/helpers.ts';
 import { Input } from '../../components/ui/Input.tsx';
 import { Select } from '../../components/ui/Select.tsx';
@@ -34,15 +34,15 @@ import { SeoHead } from '../../components/common/SeoHead.tsx';
 export const Contact: React.FC = () => {
   const { lang, t } = useI18n();
   const [searchParams] = useSearchParams();
-  const queryRoom = searchParams.get('room') as RoomType | null;
+  const queryRoom = searchParams.get('room') || '';
 
   const [hostelInfo, setHostelInfo] = useState<HostelInfo | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
 
-  // Form State
+  // Form State (roomSelection holds room.slug or room.room_type)
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [roomType, setRoomType] = useState<RoomType | ''>(queryRoom || '');
+  const [selectedRoomKey, setSelectedRoomKey] = useState<string>(queryRoom);
   const [wantsMess, setWantsMess] = useState<boolean | null>(true);
   const [moveInDate, setMoveInDate] = useState('');
   const [category, setCategory] = useState<'student' | 'job' | 'other'>('student');
@@ -56,15 +56,26 @@ export const Contact: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
-    hostelInfoService.get().then(setHostelInfo);
-    roomsService.getPublished().then(setRooms);
+    const load = () => {
+      hostelInfoService.get().then(setHostelInfo);
+      roomsService.getPublished().then((list) => {
+        setRooms(list);
+      });
+    };
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   useEffect(() => {
     if (queryRoom) {
-      setRoomType(queryRoom);
+      setSelectedRoomKey(queryRoom);
     }
   }, [queryRoom]);
+
+  // Match selected room by exact slug first, then fallback to room_type
+  const selectedRoom: Room | undefined = rooms.find(
+    (r) => r.slug === selectedRoomKey || r.room_type === selectedRoomKey
+  );
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -84,15 +95,15 @@ export const Contact: React.FC = () => {
     } else if (!validatePakistaniPhone(phone)) {
       errs.phone =
         lang === 'ur'
-          ? 'درست پاکستانی موبائل نمبر درج کریں (مثلاً: 0300-1234567)'
-          : 'Please enter a valid Pakistani mobile number (e.g. 0300-1234567).';
+          ? 'درست پاکستانی موبائل نمبر درج کریں (مثلاً: 0304-7862410)'
+          : 'Please enter a valid Pakistani mobile number (e.g. 0304-7862410 or +92 304 7862410).';
     }
 
-    if (message && message.length > 500) {
+    if (message && message.length > 440) {
       errs.message =
         lang === 'ur'
-          ? 'پیغام ۵۰۰ حروف سے زیادہ نہیں ہو سکتا'
-          : 'Message cannot exceed 500 characters.';
+          ? 'پیغام ۴۴۰ حروف سے زیادہ نہیں ہو سکتا'
+          : 'Message cannot exceed 440 characters.';
     }
 
     setErrors(errs);
@@ -107,14 +118,19 @@ export const Contact: React.FC = () => {
     setSubmitError(null);
 
     try {
+      const roomPrefix = selectedRoom
+        ? `[Selected: ${selectedRoom.name_en} (${formatCurrency(selectedRoom.monthly_fee)}/mo)] `
+        : '';
+      const combinedMessage = `${roomPrefix}${message.trim()}`.trim().slice(0, 500);
+
       const created = await inquiriesService.create({
         name,
         phone,
-        room_type: roomType ? roomType : undefined,
+        room_type: selectedRoom ? selectedRoom.room_type : undefined,
         wants_mess: wantsMess,
         move_in_date: moveInDate || undefined,
         category,
-        message: message || undefined,
+        message: combinedMessage || undefined,
         source_lang: lang,
         honeypot
       });
@@ -132,7 +148,7 @@ export const Contact: React.FC = () => {
   const handleResetForm = () => {
     setName('');
     setPhone('');
-    setRoomType('');
+    setSelectedRoomKey('');
     setWantsMess(true);
     setMoveInDate('');
     setCategory('student');
@@ -141,20 +157,23 @@ export const Contact: React.FC = () => {
     setErrors({});
   };
 
-  const contactPhone = hostelInfo?.phone || '0300-1234567';
-  const contactWhatsapp = hostelInfo?.whatsapp || '0300-1234567';
-  const address = hostelInfo ? pickLang(hostelInfo, 'address', lang) : 'Sadiqabad, Punjab';
-  const officeHours = hostelInfo ? pickLang(hostelInfo, 'office_hours', lang) : '9:00 AM – 9:00 PM';
-  const email = hostelInfo?.email || 'info@sadiqabadhostel.pk';
+  const contactPhone = hostelInfo?.phone || '0304-7862410';
+  const contactWhatsapp = hostelInfo?.whatsapp || '0304-7862410';
+  const address = hostelInfo
+    ? pickLang(hostelInfo, 'address', lang)
+    : 'Main College Road, Near Punjab College, Sadiqabad, Punjab';
+  const officeHours = hostelInfo
+    ? pickLang(hostelInfo, 'office_hours', lang)
+    : 'Daily 8:00 AM – 10:00 PM';
+  const email = hostelInfo?.email || 'admissions@sadiqabadhostel.pk';
 
-  // Prefilled WhatsApp message for post-submit button
-  const postSubmitWaMessage = `Assalam o Alaikum, I just submitted an inquiry for Sadiqabad Student Hostel:
+  const postSubmitWaMessage = `Assalam o Alaikum, I just submitted a room booking inquiry for Sadiqabad Student Hostel:
 • Name: ${submittedInquiry?.name}
 • Phone: ${submittedInquiry?.phone}
-• Room: ${submittedInquiry?.room_type || 'Any'}
+• Room: ${selectedRoom ? selectedRoom.name_en : submittedInquiry?.room_type || 'Any Available Room'}
 • Category: ${submittedInquiry?.category}
 • Move-in: ${submittedInquiry?.move_in_date || 'ASAP'}
-Please let me know availability.`;
+Please confirm seat availability.`;
 
   const waFollowUpLink = generateWhatsAppLink(contactWhatsapp, postSubmitWaMessage);
 
@@ -162,14 +181,18 @@ Please let me know availability.`;
     <div className="py-12 lg:py-16">
       <SeoHead
         title={lang === 'ur' ? 'رابطہ اور ہاسٹل بکنگ' : 'Contact & Book a Room'}
-        description={lang === 'ur' ? 'صادق آباد اسٹوڈنٹ ہاسٹل میں داخلے کے لیے رابطہ فارم اور معلومات' : 'Submit a 60-second hostel room inquiry or connect with our warden on WhatsApp.'}
+        description={
+          lang === 'ur'
+            ? 'صادق آباد اسٹوڈنٹ ہاسٹل میں داخلے اور کمرہ بک کرنے کے لیے آن لائن فارم'
+            : 'Reserve your room in 60 seconds or connect directly with our warden on WhatsApp.'
+        }
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
-            {lang === 'ur' ? 'داخلہ و رابطہ' : 'Inquire & Reserve'}
+          <span className="text-xs font-semibold text-teal-700">
+            {lang === 'ur' ? 'فوری بکنگ و رابطہ' : 'Easy Room Reservation'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
             {t('contact.title')}
@@ -197,7 +220,7 @@ Please let me know availability.`;
                   </span>
                   <a
                     href={`tel:${contactPhone.replace(/[^0-9+]/g, '')}`}
-                    className="text-base font-bold text-slate-900 hover:text-teal-700 font-mono num-ltr"
+                    className="text-base font-bold text-slate-900 hover:text-teal-700 font-mono num-ltr tabular-nums"
                   >
                     {contactPhone}
                   </a>
@@ -213,10 +236,13 @@ Please let me know availability.`;
                     {t('contact.whatsapp')}
                   </span>
                   <a
-                    href={generateWhatsAppLink(contactWhatsapp, 'Assalam o Alaikum, I would like to inquire about the hostel.')}
+                    href={generateWhatsAppLink(
+                      contactWhatsapp,
+                      'Assalam o Alaikum, I would like to inquire about booking a room at Sadiqabad Student Hostel.'
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-base font-bold text-slate-900 hover:text-emerald-700 font-mono num-ltr"
+                    className="text-base font-bold text-slate-900 hover:text-emerald-700 font-mono num-ltr tabular-nums"
                   >
                     {contactWhatsapp}
                   </a>
@@ -272,7 +298,7 @@ Please let me know availability.`;
 
           {/* Right Column: Inquiry Form with id="inquiry" */}
           <div className="lg:col-span-7" id="inquiry">
-            <Card className="p-6 sm:p-10 bg-white border border-slate-200/90 shadow-sm">
+            <Card className="p-6 sm:p-10 bg-white border border-slate-200">
               {submittedInquiry ? (
                 /* Success State */
                 <div className="text-center py-6 space-y-6">
@@ -291,13 +317,24 @@ Please let me know availability.`;
                   {/* Summary of submitted data */}
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs text-start space-y-1.5 max-w-sm mx-auto">
                     <div>
-                      <span className="font-semibold text-slate-500">Name:</span> {submittedInquiry.name}
+                      <span className="font-semibold text-slate-500">Name:</span>{' '}
+                      <span className="font-bold text-slate-900">{submittedInquiry.name}</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-slate-500">Phone:</span> {submittedInquiry.phone}
+                      <span className="font-semibold text-slate-500">Phone:</span>{' '}
+                      <span className="font-mono num-ltr tabular-nums">{submittedInquiry.phone}</span>
                     </div>
+                    {selectedRoom && (
+                      <div>
+                        <span className="font-semibold text-slate-500">Selected Room:</span>{' '}
+                        <span className="font-bold text-teal-800">
+                          {pickLang(selectedRoom, 'name', lang)} ({formatCurrency(selectedRoom.monthly_fee)}/mo)
+                        </span>
+                      </div>
+                    )}
                     <div>
-                      <span className="font-semibold text-slate-500">Category:</span> {submittedInquiry.category}
+                      <span className="font-semibold text-slate-500">Category:</span>{' '}
+                      <span className="capitalize">{submittedInquiry.category}</span>
                     </div>
                   </div>
 
@@ -312,7 +349,7 @@ Please let me know availability.`;
                       <Button
                         variant="accent"
                         size="md"
-                        className="w-full font-bold"
+                        className="w-full font-bold whitespace-nowrap"
                         icon={<MessageCircle className="w-4 h-4" />}
                       >
                         {t('contact.sendOnWhatsApp')}
@@ -322,7 +359,7 @@ Please let me know availability.`;
                       variant="secondary"
                       size="md"
                       onClick={handleResetForm}
-                      className="w-full sm:w-auto"
+                      className="w-full sm:w-auto whitespace-nowrap"
                     >
                       {t('contact.submitAnother')}
                     </Button>
@@ -330,7 +367,7 @@ Please let me know availability.`;
                 </div>
               ) : (
                 /* Main Form */
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} noValidate className="space-y-5">
                   <div className="text-start pb-2 border-b border-slate-100">
                     <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                       {t('contact.formTitle')}
@@ -340,6 +377,38 @@ Please let me know availability.`;
                     </p>
                   </div>
 
+                  {/* Selected Room Booking Summary Strip */}
+                  {selectedRoom && (
+                    <div className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 flex items-center gap-3.5 text-start">
+                      <img
+                        src={getRoomPrimaryImage(selectedRoom)}
+                        alt={pickLang(selectedRoom, 'name', lang)}
+                        referrerPolicy="no-referrer"
+                        className="w-20 h-14 rounded-lg object-cover border border-teal-200 shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            ROOM_TYPE_DEFAULT_IMAGES[selectedRoom.room_type] ||
+                            '/images/room-single.jpg';
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-semibold text-teal-700">
+                          {lang === 'ur' ? 'منتخب کردہ کمرہ' : 'Selected Room'} ·{' '}
+                          <span className="tabular-nums">
+                            {selectedRoom.beds_available} {t('rooms.bedsAvailable')}
+                          </span>
+                        </div>
+                        <div className="font-bold text-sm text-slate-900 truncate">
+                          {pickLang(selectedRoom, 'name', lang)}
+                        </div>
+                        <div className="text-xs text-slate-600 num-ltr tabular-nums">
+                          <strong className="text-teal-800">{formatCurrency(selectedRoom.monthly_fee)}/mo</strong>{' '}
+                          · Security: {formatCurrency(selectedRoom.security_deposit)} (Refundable)
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {submitError && (
                     <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2 text-start">
                       <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
@@ -347,7 +416,7 @@ Please let me know availability.`;
                     </div>
                   )}
 
-                  {/* Honeypot field (hidden from users, catches automated spam) */}
+                  {/* Honeypot field */}
                   <div className="hidden" aria-hidden="true">
                     <input
                       type="text"
@@ -372,7 +441,7 @@ Please let me know availability.`;
 
                     <Input
                       label={t('contact.phoneLabel')}
-                      placeholder={t('contact.phonePlaceholder')}
+                      placeholder="0304-7862410"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       error={errors.phone}
@@ -380,17 +449,17 @@ Please let me know availability.`;
                     />
                   </div>
 
-                  {/* Room Type & Category */}
+                  {/* Room Selection & Category */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Select
                       label={t('contact.roomType')}
-                      value={roomType}
-                      onChange={(e) => setRoomType(e.target.value as RoomType)}
+                      value={selectedRoom ? selectedRoom.slug : selectedRoomKey}
+                      onChange={(e) => setSelectedRoomKey(e.target.value)}
                     >
                       <option value="">{t('contact.selectRoom')}</option>
                       {rooms.map((r) => (
-                        <option key={r.id} value={r.room_type}>
-                          {pickLang(r, 'name', lang)} ({r.monthly_fee} PKR/mo)
+                        <option key={r.id} value={r.slug}>
+                          {pickLang(r, 'name', lang)} — {formatCurrency(r.monthly_fee)}/mo
                         </option>
                       ))}
                     </Select>
@@ -398,7 +467,7 @@ Please let me know availability.`;
                     <Select
                       label={t('contact.category')}
                       value={category}
-                      onChange={(e) => setCategory(e.target.value as any)}
+                      onChange={(e) => setCategory(e.target.value as 'student' | 'job' | 'other')}
                       required
                     >
                       <option value="student">{t('contact.catStudent')}</option>
@@ -410,9 +479,9 @@ Please let me know availability.`;
                   {/* Mess Radio Selection & Move-in Date */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-start">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-800 mb-2">
+                      <span className="block text-sm font-semibold text-slate-800 mb-2">
                         {t('contact.wantsMess')}
-                      </label>
+                      </span>
                       <div className="flex items-center gap-4 pt-1">
                         <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
                           <input
@@ -452,7 +521,11 @@ Please let me know availability.`;
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     error={errors.message}
-                    helperText={lang === 'ur' ? 'اختیاری، زیادہ سے زیادہ ۵۰۰ حروف' : 'Optional, max 500 characters'}
+                    helperText={
+                      lang === 'ur'
+                        ? 'اختیاری، اپنے کالج یا آمد کی تاریخ لکھ سکتے ہیں'
+                        : 'Optional — mention your college, department, or preferred floor'
+                    }
                     rows={3}
                   />
 
@@ -462,7 +535,7 @@ Please let me know availability.`;
                     variant="accent"
                     size="lg"
                     loading={loading}
-                    className="w-full font-bold shadow-md"
+                    className="w-full font-bold"
                     icon={<Send className="w-4 h-4" />}
                   >
                     {loading ? t('contact.submitting') : t('contact.submit')}

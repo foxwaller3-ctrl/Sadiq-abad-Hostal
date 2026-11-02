@@ -1,4 +1,11 @@
-import type { Lang } from '../types/index.ts';
+import type { Lang, Room, RoomType } from '../types/index.ts';
+
+export const ROOM_TYPE_DEFAULT_IMAGES: Record<RoomType, string> = {
+  single: '/images/room-single.jpg',
+  double: '/images/room-double.jpg',
+  triple: '/images/room-triple.jpg',
+  quad: '/images/room-quad.jpg'
+};
 
 /**
  * Validates Pakistani phone numbers:
@@ -7,15 +14,32 @@ import type { Lang } from '../types/index.ts';
 export function validatePakistaniPhone(phone: string): boolean {
   if (!phone) return false;
   const cleanPhone = phone.trim();
-  const regex = /^(\+92\s*|0)3[0-9]{2}[- ]?[0-9]{7}$/;
+  const regex = /^(\+92[\s-]*|0)3[0-9]{2}[- ]?[0-9]{7}$/;
   return regex.test(cleanPhone);
 }
 
 /**
- * Formats Pakistani Rupee amounts: e.g. Rs. 15,000
+ * Normalizes a valid Pakistani phone number so it strictly satisfies
+ * Supabase PostgreSQL CHECK constraint: ^(\+92|0)3[0-9]{2}[- ]?[0-9]{7}$
+ */
+export function normalizePakistaniPhoneForDb(phone: string): string {
+  const trimmed = (phone || '').trim();
+  const digitsAndPlus = trimmed.replace(/[^\d+]/g, '');
+  if (digitsAndPlus.startsWith('+92') && digitsAndPlus.length === 13) {
+    return `${digitsAndPlus.slice(0, 6)}-${digitsAndPlus.slice(6)}`;
+  }
+  if (digitsAndPlus.startsWith('03') && digitsAndPlus.length === 11) {
+    return `${digitsAndPlus.slice(0, 4)}-${digitsAndPlus.slice(4)}`;
+  }
+  return trimmed.replace(/^\+92\s+/, '+92');
+}
+
+/**
+ * Formats Pakistani Rupee amounts: e.g. Rs. 8,500
  */
 export function formatCurrency(amount: number): string {
-  const formatted = new Intl.NumberFormat('en-PK').format(amount);
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  const formatted = new Intl.NumberFormat('en-PK').format(safeAmount);
   return `Rs. ${formatted}`;
 }
 
@@ -66,8 +90,7 @@ export function getDayName(dayIndex: number, lang: Lang): string {
  * Returns WhatsApp chat link with prefilled URL-encoded message
  */
 export function generateWhatsAppLink(phone: string, message: string): string {
-  // Clean phone number to digits only (e.g. 03001234567 -> 923001234567)
-  let cleaned = phone.replace(/[^0-9]/g, '');
+  let cleaned = (phone || '').replace(/[^0-9]/g, '');
   if (cleaned.startsWith('0')) {
     cleaned = '92' + cleaned.substring(1);
   }
@@ -87,7 +110,8 @@ export function isNoticeActive(notice: { is_active: boolean; starts_at: string; 
 
 /**
  * Normalizes image URLs:
- * Resolves Kommodo share links (https://kommodo.ai/i/...) to the local high-res asset /logo.png
+ * Resolves Kommodo share links (https://kommodo.ai/i/...) to local high-res asset /logo.png
+ * and filters out fragile placeholder hosts if any remain.
  */
 export function normalizeImageUrl(url: string | null | undefined): string {
   if (!url) return '';
@@ -96,4 +120,62 @@ export function normalizeImageUrl(url: string | null | undefined): string {
     return '/logo.png';
   }
   return trimmed;
+}
+
+/**
+ * Generates a clean URL slug from an English room name
+ */
+export function slugifyRoomName(name: string, fallbackPrefix = 'room'): string {
+  const base = (name || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return base || `${fallbackPrefix}-${Date.now()}`;
+}
+
+/**
+ * Ensures a slug is unique against existing room slugs
+ */
+export function ensureUniqueSlug(desiredSlug: string, existingSlugs: string[]): string {
+  const clean = slugifyRoomName(desiredSlug);
+  const taken = new Set(existingSlugs.map((s) => s.toLowerCase()));
+  if (!taken.has(clean)) return clean;
+  let counter = 2;
+  while (taken.has(`${clean}-${counter}`)) {
+    counter += 1;
+  }
+  return `${clean}-${counter}`;
+}
+
+/**
+ * Extracts clean Google Maps embed URL even if admin pastes full <iframe src="..."> HTML
+ */
+export function extractMapEmbedUrl(rawInput: string): string {
+  const trimmed = (rawInput || '').trim();
+  if (!trimmed) return '';
+  const iframeMatch = trimmed.match(/src=["']([^"']+)["']/i);
+  const extracted = iframeMatch ? iframeMatch[1].trim() : trimmed;
+  if (extracted.startsWith('https://www.google.com/maps/embed')) {
+    return extracted;
+  }
+  return '';
+}
+
+/**
+ * Returns guaranteed non-empty distinct image list for a room
+ */
+export function getRoomImages(room: Pick<Room, 'room_type' | 'image_urls'>): string[] {
+  const validUrls = (room.image_urls || [])
+    .map((u) => normalizeImageUrl(u))
+    .filter((u) => Boolean(u) && !u.includes('images.unsplash.com'));
+  if (validUrls.length > 0) {
+    return validUrls;
+  }
+  const primary = ROOM_TYPE_DEFAULT_IMAGES[room.room_type] || '/images/room-single.jpg';
+  return [primary, '/images/clean-washroom.jpg', '/images/study-hall.jpg'];
+}
+
+export function getRoomPrimaryImage(room: Pick<Room, 'room_type' | 'image_urls'>): string {
+  return getRoomImages(room)[0];
 }

@@ -3,6 +3,7 @@ import { ShieldCheck, HelpCircle, MessageCircle, AlertTriangle } from 'lucide-re
 import { rulesService } from '../../services/rulesService.ts';
 import { faqsService } from '../../services/faqsService.ts';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
+import { mockStore } from '../../services/mockStore.ts';
 import type { Rule, Faq } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { pickLang, generateWhatsAppLink } from '../../utils/helpers.ts';
@@ -10,19 +11,24 @@ import { Accordion } from '../../components/ui/Accordion.tsx';
 import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { SeoHead } from '../../components/common/SeoHead.tsx';
+import { RuleIcon } from '../../components/common/SemanticIcon.tsx';
 
 export const RulesFaq: React.FC = () => {
   const { lang, t } = useI18n();
   const [rules, setRules] = useState<Rule[]>([]);
   const [faqs, setFaqs] = useState<Faq[]>([]);
-  const [whatsapp, setWhatsapp] = useState('0300-1234567');
+  const [whatsapp, setWhatsapp] = useState('0304-7862410');
 
   useEffect(() => {
-    rulesService.getPublished().then(setRules);
-    faqsService.getPublished().then(setFaqs);
-    hostelInfoService.get().then((info) => {
-      if (info.whatsapp) setWhatsapp(info.whatsapp);
-    });
+    const load = () => {
+      rulesService.getPublished().then(setRules);
+      faqsService.getPublished().then(setFaqs);
+      hostelInfoService.get().then((info) => {
+        if (info.whatsapp) setWhatsapp(info.whatsapp);
+      });
+    };
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   const accordionItems = faqs.map((faq) => ({
@@ -48,7 +54,7 @@ export const RulesFaq: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+          <span className="text-xs font-semibold text-teal-700">
             {lang === 'ur' ? 'ڈسپلن اور رہنمائی' : 'Discipline & Policies'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -83,9 +89,13 @@ export const RulesFaq: React.FC = () => {
                   key={rule.id}
                   className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs flex items-start gap-3 hover:border-teal-300 transition"
                 >
-                  <span className="w-7 h-7 rounded-lg bg-teal-700 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-7 h-7 rounded-lg bg-teal-700 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 tabular-nums">
                     {idx + 1}
                   </span>
+                  <RuleIcon
+                    text={rule.text_en || rule.text_ur}
+                    className="w-4 h-4 text-teal-700 shrink-0 mt-1.5"
+                  />
                   <p className="text-sm text-slate-700 leading-relaxed font-medium">
                     {pickLang(rule, 'text', lang)}
                   </p>

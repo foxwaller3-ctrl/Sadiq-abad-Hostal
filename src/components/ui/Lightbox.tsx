@@ -87,7 +87,14 @@ export const Lightbox: React.FC<LightboxProps> = ({
         <img
           src={imageUrl}
           alt={caption || 'Hostel photo'}
+          referrerPolicy="no-referrer"
           className="max-h-[72vh] max-w-full object-contain rounded-xl shadow-2xl transition duration-200"
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            if (!target.src.endsWith('/images/hero-hostel.jpg')) {
+              target.src = '/images/hero-hostel.jpg';
+            }
+          }}
         />
         {caption && (
           <p className="mt-3 text-center text-sm text-slate-200 bg-slate-900/70 px-4 py-1.5 rounded-full backdrop-blur-xs max-w-lg">

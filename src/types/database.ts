@@ -17,6 +17,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      bed_allocations: {
+        Row: {
+          agreed_rent: number
+          bed_number: number
+          check_in_date: string
+          check_out_date: string
+          cnic_or_id: string | null
+          created_at: string
+          duration_unit: string
+          duration_value: number
+          id: string
+          institution_or_workplace: string | null
+          notes: string | null
+          payment_status: string
+          resident_category: string
+          resident_name: string
+          resident_phone: string
+          room_id: string
+          room_slug: string | null
+          security_deposit: number
+          status: string
+          unit_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          agreed_rent?: number
+          bed_number: number
+          check_in_date: string
+          check_out_date: string
+          cnic_or_id?: string | null
+          created_at?: string
+          duration_unit?: string
+          duration_value?: number
+          id?: string
+          institution_or_workplace?: string | null
+          notes?: string | null
+          payment_status?: string
+          resident_category?: string
+          resident_name: string
+          resident_phone: string
+          room_id: string
+          room_slug?: string | null
+          security_deposit?: number
+          status?: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agreed_rent?: number
+          bed_number?: number
+          check_in_date?: string
+          check_out_date?: string
+          cnic_or_id?: string | null
+          created_at?: string
+          duration_unit?: string
+          duration_value?: number
+          id?: string
+          institution_or_workplace?: string | null
+          notes?: string | null
+          payment_status?: string
+          resident_category?: string
+          resident_name?: string
+          resident_phone?: string
+          room_id?: string
+          room_slug?: string | null
+          security_deposit?: number
+          status?: string
+          unit_label?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       facilities: {
         Row: {
           description_en: string

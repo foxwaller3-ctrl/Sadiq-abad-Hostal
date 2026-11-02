@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Utensils,
+  UtensilsCrossed,
   Coffee,
   Sun,
   Moon,
   Info,
   Calendar,
-  Sparkles,
-  Check
+  BedDouble
 } from 'lucide-react';
 import { messService } from '../../services/messService.ts';
+import { mockStore } from '../../services/mockStore.ts';
 import type { MessPlan, MessMenuDay } from '../../types/index.ts';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import {
@@ -27,13 +27,16 @@ export const Mess: React.FC = () => {
   const { lang, t } = useI18n();
   const [plans, setPlans] = useState<MessPlan[]>([]);
   const [menuDays, setMenuDays] = useState<MessMenuDay[]>([]);
-  // Current day index (0 = Sunday, 1 = Monday, etc.)
   const todayIndex = new Date().getDay();
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(todayIndex);
 
   useEffect(() => {
-    messService.getPlans().then(setPlans);
-    messService.getMenu().then(setMenuDays);
+    const load = () => {
+      messService.getPlans().then(setPlans);
+      messService.getMenu().then(setMenuDays);
+    };
+    load();
+    return mockStore.subscribe(load);
   }, []);
 
   // Sort days starting with Monday (1..6, 0)
@@ -56,7 +59,7 @@ export const Mess: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+          <span className="text-xs font-semibold text-teal-700">
             {lang === 'ur' ? 'تازہ اور لذیذ کھانا' : 'Dining Excellence'}
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-1">
@@ -67,6 +70,26 @@ export const Mess: React.FC = () => {
           </p>
         </div>
 
+        {/* Dining Hall Visual Showcase */}
+        <div className="mb-14 rounded-3xl overflow-hidden border border-slate-200 bg-slate-900 relative aspect-[21/8] min-h-[200px]">
+          <img
+            src="/images/mess-dining.jpg"
+            alt="Sadiqabad Student Hostel Dining Hall and Mess"
+            referrerPolicy="no-referrer"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/30 to-transparent flex flex-col justify-end p-6 sm:p-8 text-start">
+            <span className="text-xs font-semibold text-amber-300">
+              {lang === 'ur' ? 'گھر جیسا صاف اور تازہ کھانا' : 'Freshly Cooked 3 Times Daily'}
+            </span>
+            <p className="text-base sm:text-xl font-bold text-white mt-0.5 max-w-2xl">
+              {lang === 'ur'
+                ? 'ہمارے کشادہ ڈائننگ ہال میں روزانہ تازہ روٹی، چکن، دال، سبزی اور ٹھنڈا فلٹر شدہ پانی پیش کیا جاتا ہے'
+                : 'Spacious ventilated dining hall serving hot tandoori roti, chicken dishes, pulses, and chilled RO mineral water'}
+            </p>
+          </div>
+        </div>
+
         {/* 1. Mess Plans Cards */}
         <div className="mb-16">
           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6 text-start">
@@ -74,10 +97,16 @@ export const Mess: React.FC = () => {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {plans.map((plan) => {
+            {plans.map((plan, index) => {
               const name = pickLang(plan, 'name', lang);
               const desc = pickLang(plan, 'description', lang);
-              const isPopular = plan.price_monthly === 9000;
+              const isPopular = index === 0 && plan.price_monthly > 0;
+              const PlanIcon =
+                plan.price_monthly === 0
+                  ? BedDouble
+                  : index === 0
+                  ? UtensilsCrossed
+                  : Coffee;
 
               return (
                 <Card
@@ -94,9 +123,12 @@ export const Mess: React.FC = () => {
                   )}
 
                   <div>
+                    <div className="w-11 h-11 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-700 flex items-center justify-center mb-4">
+                      <PlanIcon className="w-5 h-5" />
+                    </div>
                     <h3 className="font-bold text-lg text-slate-900 mb-2">{name}</h3>
                     <div className="flex items-baseline gap-1 my-3">
-                      <span className="text-2xl sm:text-3xl font-extrabold text-teal-800 num-ltr">
+                      <span className="text-2xl sm:text-3xl font-extrabold text-teal-800 num-ltr tabular-nums">
                         {plan.price_monthly === 0
                           ? 'Rs. 0'
                           : formatCurrency(plan.price_monthly)}
@@ -138,7 +170,7 @@ export const Mess: React.FC = () => {
         <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-xs mb-16">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-teal-700 uppercase tracking-wider mb-1">
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-teal-700 mb-1">
                 <Calendar className="w-4 h-4" />
                 <span>{lang === 'ur' ? '۷ دن کا مینو' : '7-Day Dining Schedule'}</span>
               </div>
@@ -189,11 +221,11 @@ export const Mess: React.FC = () => {
                         isToday ? 'bg-teal-50/40 font-medium' : ''
                       }`}
                     >
-                      <td className="py-4 px-4 font-bold text-slate-900 flex items-center gap-2">
+                      <td className="py-4 px-4 font-bold text-slate-900">
                         <span>{getDayName(m.day_of_week, lang)}</span>
                         {isToday && (
-                          <span className="text-[10px] bg-teal-700 text-white px-2 py-0.5 rounded-full font-bold">
-                            {t('mess.todayBadge')}
+                          <span className="text-xs text-teal-700 font-semibold ms-1.5">
+                            · {t('mess.todayBadge')}
                           </span>
                         )}
                       </td>
@@ -233,7 +265,7 @@ export const Mess: React.FC = () => {
                   >
                     <span>{getDayName(m.day_of_week, lang)}</span>
                     {isToday && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      <span className="opacity-80">· {lang === 'ur' ? 'آج' : 'Today'}</span>
                     )}
                   </button>
                 );
@@ -253,7 +285,7 @@ export const Mess: React.FC = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80">
-                  <div className="flex items-center gap-2 text-amber-800 font-bold text-xs uppercase mb-1">
+                  <div className="flex items-center gap-2 text-amber-800 font-bold text-xs mb-1">
                     <Coffee className="w-4 h-4" />
                     <span>{t('mess.breakfast')} (7:30 - 9:00 AM)</span>
                   </div>
@@ -263,7 +295,7 @@ export const Mess: React.FC = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-200/80">
-                  <div className="flex items-center gap-2 text-teal-800 font-bold text-xs uppercase mb-1">
+                  <div className="flex items-center gap-2 text-teal-800 font-bold text-xs mb-1">
                     <Sun className="w-4 h-4" />
                     <span>{t('mess.lunch')} (1:00 - 2:30 PM)</span>
                   </div>
@@ -273,7 +305,7 @@ export const Mess: React.FC = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200/80">
-                  <div className="flex items-center gap-2 text-indigo-800 font-bold text-xs uppercase mb-1">
+                  <div className="flex items-center gap-2 text-indigo-800 font-bold text-xs mb-1">
                     <Moon className="w-4 h-4" />
                     <span>{t('mess.dinner')} (8:00 - 9:30 PM)</span>
                   </div>

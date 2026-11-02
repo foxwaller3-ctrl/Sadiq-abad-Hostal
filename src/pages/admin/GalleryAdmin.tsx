@@ -7,19 +7,13 @@ import { Input } from '../../components/ui/Input.tsx';
 import { Select } from '../../components/ui/Select.tsx';
 import { Modal } from '../../components/ui/Modal.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
-import { Plus, Trash2, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Edit2, Eye, EyeOff } from 'lucide-react';
 
 export const GalleryAdmin: React.FC = () => {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newItem, setNewItem] = useState<Omit<GalleryItem, 'id'>>({
-    category: 'rooms',
-    image_url: '',
-    caption_en: '',
-    caption_ur: '',
-    is_published: true,
-    sort_order: 1
-  });
+  const [editingItem, setEditingItem] = useState<GalleryItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<GalleryItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -31,6 +25,26 @@ export const GalleryAdmin: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleOpenAdd = () => {
+    setSelectedFile(null);
+    setEditingItem({
+      id: '',
+      category: 'rooms',
+      image_url: '',
+      caption_en: '',
+      caption_ur: '',
+      is_published: true,
+      sort_order: items.length + 1
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: GalleryItem) => {
+    setSelectedFile(null);
+    setEditingItem({ ...item });
+    setIsModalOpen(true);
+  };
 
   const handleTogglePublish = async (item: GalleryItem) => {
     try {
@@ -44,46 +58,56 @@ export const GalleryAdmin: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newItem.image_url.trim() && !selectedFile) {
-      toast('Image URL is required.', 'error');
+    if (!editingItem) return;
+    if (!editingItem.image_url.trim() && !selectedFile) {
+      toast('Please upload an image file or provide an image URL.', 'error');
       return;
     }
 
     setLoading(true);
     try {
-      const uploadedUrl = selectedFile ? await uploadHostelMedia(selectedFile, 'gallery') : newItem.image_url.trim();
-      await galleryService.create({ ...newItem, image_url: uploadedUrl });
-      toast('New photo added to gallery!', 'success');
+      const uploadedUrl = selectedFile
+        ? await uploadHostelMedia(selectedFile, 'gallery')
+        : editingItem.image_url.trim();
+
+      if (editingItem.id) {
+        await galleryService.update(editingItem.id, {
+          ...editingItem,
+          image_url: uploadedUrl
+        });
+        toast('Gallery photo updated!', 'success');
+      } else {
+        await galleryService.create({
+          ...editingItem,
+          image_url: uploadedUrl
+        });
+        toast('New photo added to gallery!', 'success');
+      }
       setIsModalOpen(false);
       setSelectedFile(null);
-      setNewItem({
-        category: 'rooms',
-        image_url: '',
-        caption_en: '',
-        caption_ur: '',
-        is_published: true,
-        sort_order: items.length + 1
-      });
+      setEditingItem(null);
       loadData();
-    } catch {
-      toast('Failed to save photo.', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to save photo.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this photo from gallery?')) return;
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
     try {
-      const item = items.find((photo) => photo.id === id);
-      await galleryService.remove(id);
-      if (item) {
-        try { await deleteHostelMedia(item.image_url); } catch { /* row removal succeeded; orphaned storage can be cleaned later */ }
+      await galleryService.remove(itemToDelete.id);
+      try {
+        await deleteHostelMedia(itemToDelete.image_url);
+      } catch {
+        // storage cleanup is best-effort
       }
-      toast('Photo deleted.', 'info');
+      toast('Photo deleted from gallery.', 'info');
+      setItemToDelete(null);
       loadData();
-    } catch {
-      toast('Failed to delete.', 'error');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to delete photo.', 'error');
     }
   };
 
@@ -93,10 +117,10 @@ export const GalleryAdmin: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Gallery Photos Management</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Upload and organize authentic hostel photos across rooms, mess, and study hall.
+            Upload, edit captions, categorize, or remove hostel photos across rooms, mess, washrooms, and study hall.
           </p>
         </div>
-        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" icon={<Plus className="w-4 h-4" />} onClick={handleOpenAdd}>
           Add Photo
         </Button>
       </div>
@@ -112,106 +136,172 @@ export const GalleryAdmin: React.FC = () => {
                 <img
                   src={item.image_url}
                   alt={item.caption_en || 'Hostel'}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/images/hero-hostel.jpg';
+                  }}
                   className="w-full h-full object-cover"
                 />
-                <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-slate-900/80 text-white px-2 py-0.5 rounded-full backdrop-blur-xs">
+                <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wider bg-slate-900/80 text-white px-2 py-0.5 rounded-md backdrop-blur-xs">
                   {item.category.replace('_', ' ')}
                 </span>
               </div>
               <div className="p-3 text-xs space-y-1">
-                <p className="font-semibold text-slate-800 line-clamp-1">{item.caption_en || 'No caption'}</p>
-                <p className="text-teal-700 font-medium line-clamp-1" dir="rtl">{item.caption_ur || '—'}</p>
+                <p className="font-semibold text-slate-800 line-clamp-1">
+                  {item.caption_en || 'No caption'}
+                </p>
+                <p className="text-teal-700 font-medium font-urdu line-clamp-1" dir="rtl">
+                  {item.caption_ur || '—'}
+                </p>
               </div>
             </div>
 
-            <div className="p-3 pt-0 border-t border-slate-100 flex items-center justify-between">
+            <div className="p-3 pt-2 border-t border-slate-100 flex items-center justify-between">
               <button
+                type="button"
                 onClick={() => handleTogglePublish(item)}
-                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full cursor-pointer ${
+                className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-md cursor-pointer ${
                   item.is_published ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 {item.is_published ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                 <span>{item.is_published ? 'Published' : 'Hidden'}</span>
               </button>
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition cursor-pointer"
-                title="Delete photo"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(item)}
+                  className="p-1.5 text-slate-500 hover:text-teal-700 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                  title="Edit photo"
+                  aria-label={`Edit ${item.caption_en || 'photo'}`}
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItemToDelete(item)}
+                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition cursor-pointer"
+                  title="Delete photo"
+                  aria-label={`Delete ${item.caption_en || 'photo'}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Add Photo Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Add Photo to Gallery"
-        maxWidth="md"
-      >
-        <form onSubmit={handleSave} className="space-y-4 text-start">
-          <div className="space-y-3">
+      {/* Add / Edit Photo Modal */}
+      {editingItem && (
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingItem.id ? 'Edit Gallery Photo' : 'Add Photo to Gallery'}
+          maxWidth="md"
+        >
+          <form onSubmit={handleSave} className="space-y-4 text-start">
+            <div className="space-y-3">
+              <Input
+                label="Upload Image File (PNG, JPG, WebP — max 5 MB)"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+              />
+              <Input
+                label="Or Image URL"
+                value={editingItem.image_url}
+                onChange={(e) => setEditingItem({ ...editingItem, image_url: e.target.value })}
+                placeholder="https://... or /images/room-double.jpg"
+                required={!selectedFile}
+              />
+              {selectedFile && (
+                <p className="text-xs text-teal-700 font-medium">
+                  Selected file: {selectedFile.name}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Select
+                label="Category"
+                value={editingItem.category}
+                onChange={(e) =>
+                  setEditingItem({ ...editingItem, category: e.target.value as GalleryCategory })
+                }
+              >
+                <option value="rooms">Bedrooms (کمرے)</option>
+                <option value="mess">Mess & Dining (میس و کچن)</option>
+                <option value="study_area">Study Hall (اسٹڈی ایریا)</option>
+                <option value="bathrooms">Washrooms (واش رومز)</option>
+                <option value="building">Building Exterior (عمارت)</option>
+                <option value="surroundings">Surroundings & Lounge (آس پاس)</option>
+              </Select>
+
+              <Input
+                type="number"
+                label="Display Order"
+                min={1}
+                value={editingItem.sort_order}
+                onChange={(e) =>
+                  setEditingItem({
+                    ...editingItem,
+                    sort_order: parseInt(e.target.value, 10) || 1
+                  })
+                }
+              />
+            </div>
+
             <Input
-              label="Upload image (optional)"
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
+              label="Caption (English)"
+              value={editingItem.caption_en}
+              onChange={(e) => setEditingItem({ ...editingItem, caption_en: e.target.value })}
+              placeholder="e.g. Executive 2-Bed Sharing Room with study desks"
             />
-            <p className="text-xs text-slate-500">PNG, JPG, WebP or SVG; maximum 5 MB. A selected file is uploaded to the private-write/public-read hostel-media bucket when you save.</p>
+
             <Input
-              label="Or use an Image URL"
-              value={newItem.image_url}
-              onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
-              placeholder="https://images.unsplash.com/..."
-              required={!selectedFile}
+              label="Caption (Urdu - اردو)"
+              value={editingItem.caption_ur}
+              onChange={(e) => setEditingItem({ ...editingItem, caption_ur: e.target.value })}
+              placeholder="مثلاً: کشادہ ڈبل روم مع اسٹڈی ٹیبلز"
+              dir="rtl"
             />
-            {selectedFile && <p className="text-xs text-teal-700">Selected: {selectedFile.name}</p>}
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={loading}>
+                {editingItem.id ? 'Save Changes' : 'Add Photo'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (
+        <Modal
+          isOpen={!!itemToDelete}
+          onClose={() => setItemToDelete(null)}
+          title="Delete Gallery Photo"
+          maxWidth="sm"
+        >
+          <div className="space-y-4 text-start">
+            <p className="text-sm text-slate-600">
+              Remove this photo from the website gallery?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setItemToDelete(null)}>
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={handleConfirmDelete}>
+                Delete Photo
+              </Button>
+            </div>
           </div>
-
-          <Select
-            label="Category"
-            value={newItem.category}
-            onChange={(e) =>
-              setNewItem({ ...newItem, category: e.target.value as GalleryCategory })
-            }
-          >
-            <option value="rooms">Bedrooms (کمرے)</option>
-            <option value="mess">Mess & Dining (میس و کچن)</option>
-            <option value="study_area">Study Hall (اسٹڈی ایریا)</option>
-            <option value="bathrooms">Washrooms (واش رومز)</option>
-            <option value="building">Building Exterior (عمارت)</option>
-            <option value="surroundings">Surroundings & Lounge (آس پاس)</option>
-          </Select>
-
-          <Input
-            label="Caption (English)"
-            value={newItem.caption_en}
-            onChange={(e) => setNewItem({ ...newItem, caption_en: e.target.value })}
-            placeholder="e.g. Spacious Double Room with study desks"
-          />
-
-          <Input
-            label="Caption (Urdu)"
-            value={newItem.caption_ur}
-            onChange={(e) => setNewItem({ ...newItem, caption_ur: e.target.value })}
-            placeholder="مثلاً: کشادہ ڈبل روم مع اسٹڈی ٹیبلز"
-            dir="rtl"
-          />
-
-          <div className="pt-3 border-t flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" loading={loading}>
-              Add Photo
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        </Modal>
+      )}
     </div>
   );
 };

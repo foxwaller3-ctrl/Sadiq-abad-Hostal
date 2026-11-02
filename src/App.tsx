@@ -25,6 +25,7 @@ const ResetPassword = React.lazy(() => import('./pages/admin/ResetPassword.tsx')
 const Dashboard = React.lazy(() => import('./pages/admin/Dashboard.tsx').then((m) => ({ default: m.Dashboard })));
 const HostelInfoAdmin = React.lazy(() => import('./pages/admin/HostelInfoAdmin.tsx').then((m) => ({ default: m.HostelInfoAdmin })));
 const RoomsAdmin = React.lazy(() => import('./pages/admin/RoomsAdmin.tsx').then((m) => ({ default: m.RoomsAdmin })));
+const BedsReportAdmin = React.lazy(() => import('./pages/admin/BedsReportAdmin.tsx').then((m) => ({ default: m.BedsReportAdmin })));
 const FacilitiesAdmin = React.lazy(() => import('./pages/admin/FacilitiesAdmin.tsx').then((m) => ({ default: m.FacilitiesAdmin })));
 const MessAdmin = React.lazy(() => import('./pages/admin/MessAdmin.tsx').then((m) => ({ default: m.MessAdmin })));
 const GalleryAdmin = React.lazy(() => import('./pages/admin/GalleryAdmin.tsx').then((m) => ({ default: m.GalleryAdmin })));
@@ -64,6 +65,7 @@ export default function App() {
               <Route index element={<Dashboard />} />
               <Route path="hostel-info" element={<HostelInfoAdmin />} />
               <Route path="rooms" element={<RoomsAdmin />} />
+              <Route path="beds" element={<BedsReportAdmin />} />
               <Route path="facilities" element={<FacilitiesAdmin />} />
               <Route path="mess" element={<MessAdmin />} />
               <Route path="gallery" element={<GalleryAdmin />} />

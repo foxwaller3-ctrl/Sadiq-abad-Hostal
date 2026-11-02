@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, Phone, Mail, MapPin, Clock, ShieldCheck, Heart } from 'lucide-react';
+import { Building2, Phone, Mail, MapPin, Clock, ShieldCheck, Lock } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext.tsx';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
 import { mockStore } from '../../services/mockStore.ts';
@@ -49,6 +49,7 @@ export const Footer: React.FC = () => {
                   <img
                     src={logoUrl}
                     alt={hostelName}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-contain"
                     onError={(e) => {
                       if ((e.currentTarget as HTMLImageElement).src !== window.location.origin + '/logo.png') {
@@ -150,9 +151,10 @@ export const Footer: React.FC = () => {
               <li className="pt-2">
                 <Link
                   to="/admin"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition whitespace-nowrap"
                 >
-                  <span>🔐 {t('footer.adminLogin')}</span>
+                  <Lock className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                  <span>{t('footer.adminLogin')}</span>
                 </Link>
               </li>
             </ul>
@@ -170,7 +172,7 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-teal-400 shrink-0" />
-                <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`} className="hover:text-teal-400 font-mono num-ltr">
+                <a href={`tel:${phone.replace(/[^0-9+]/g, '')}`} className="hover:text-teal-400 font-mono num-ltr tabular-nums">
                   {phone}
                 </a>
               </div>
@@ -192,13 +194,12 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom copyright line */}
-        <div className="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>
+        <div className="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="tabular-nums">
             © {new Date().getFullYear()} {hostelName}. {t('footer.allRights')}
           </p>
-          <p className="flex items-center gap-1">
-            <span>Built with care for students in Sadiqabad</span>
-            <Heart className="w-3.5 h-3.5 text-rose-500 inline fill-rose-500" />
+          <p>
+            Main College Road, Near Punjab College · Sadiqabad, District Rahim Yar Khan
           </p>
         </div>
       </div>
