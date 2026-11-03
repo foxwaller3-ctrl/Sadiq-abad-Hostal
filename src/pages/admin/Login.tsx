@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, Lock, Mail, ArrowLeft, KeyRound, Building2 } from 'lucide-react';
+import { ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
 import { authService } from '../../services/authService.ts';
 import { hostelInfoService } from '../../services/hostelInfoService.ts';
 import { normalizeImageUrl } from '../../utils/helpers.ts';
@@ -11,7 +11,7 @@ import { Card } from '../../components/ui/Card.tsx';
 import { useToast } from '../../components/ui/Toast.tsx';
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('foxwaller3@gmail.com');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +98,8 @@ export const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="foxwaller3@gmail.com"
+              autoComplete="off"
+              placeholder="Enter your admin email"
             />
 
             <Input
@@ -107,6 +108,7 @@ export const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="off"
               placeholder="Enter your password"
             />
 
