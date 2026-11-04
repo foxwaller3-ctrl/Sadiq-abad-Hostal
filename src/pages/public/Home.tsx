@@ -35,6 +35,8 @@ import { Button } from '../../components/ui/Button.tsx';
 import { Card } from '../../components/ui/Card.tsx';
 import { SeoHead } from '../../components/common/SeoHead.tsx';
 import { AmenityIcon } from '../../components/common/SemanticIcon.tsx';
+import { AnimatedHeroBanners } from '../../components/common/AnimatedHeroBanners.tsx';
+import { triggerPastelBomb } from '../../utils/pastelBomb.ts';
 
 export const Home: React.FC = () => {
   const { lang, t, dir } = useI18n();
@@ -150,45 +152,27 @@ export const Home: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Architectural Visual Anchor */}
+            {/* Right Architectural Visual Anchor replaced with Animated 3-Banner Carousel */}
             <div className="lg:col-span-5 flex">
-              <div className="relative w-full rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-800 aspect-[16/10] lg:aspect-auto lg:h-full min-h-[260px]">
-                <img
-                  src="/images/hero-hostel.jpg"
-                  alt="Sadiqabad Student Hostel Building and Courtyard"
-                  referrerPolicy="no-referrer"
-                  fetchPriority="high"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex flex-col justify-end p-5 text-start">
-                  <p className="text-xs font-semibold text-teal-300">
-                    {lang === 'ur' ? 'محفوظ و پرسکون کیمپس' : 'Purpose-Built Student Residence'}
-                  </p>
-                  <p className="text-sm font-bold text-white mt-0.5">
-                    {lang === 'ur'
-                      ? 'پنجاب کالج اور مین بس اسٹینڈ سے ۳ منٹ پیدل مسافت'
-                      : '3 Minutes Walk from Punjab College & Main Bus Stand'}
-                  </p>
-                </div>
-              </div>
+              <AnimatedHeroBanners />
             </div>
           </div>
 
-          {/* Full-width 4-Column Core Facility Strip Below Hero Split */}
+          {/* Full-width 4-Column Core Facility Strip Below Hero Split with light expand hover */}
           <div className="pt-8 border-t border-slate-800 grid grid-cols-2 lg:grid-cols-4 gap-4 text-xs sm:text-sm font-medium text-slate-200 text-start">
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover-light-expand cursor-default">
               <Wifi className="w-5 h-5 text-teal-400 shrink-0" />
               <span>{t('hero.badgeWifi')}</span>
             </div>
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover-light-expand cursor-default">
               <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
               <span>{t('hero.badgeCctv')}</span>
             </div>
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover-light-expand cursor-default">
               <UtensilsCrossed className="w-5 h-5 text-rose-400 shrink-0" />
               <span>{t('hero.badgeMess')}</span>
             </div>
-            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60">
+            <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 hover-light-expand cursor-default">
               <Zap className="w-5 h-5 text-yellow-400 shrink-0" />
               <span>{t('hero.badgePower')}</span>
             </div>
@@ -300,7 +284,12 @@ export const Home: React.FC = () => {
                         </Button>
                       </Link>
                       <Link to="/rooms">
-                        <Button variant="secondary" size="sm" className="whitespace-nowrap">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="whitespace-nowrap"
+                          onClick={() => triggerPastelBomb()}
+                        >
                           {t('rooms.viewDetails')}
                         </Button>
                       </Link>
@@ -326,7 +315,7 @@ export const Home: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-start">
-            <Card className="p-6 bg-slate-50 border-slate-200" hoverable>
+            <Card className="p-6 bg-slate-50 border-slate-200 hover-frame-shake" hoverable>
               <div className="w-11 h-11 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center mb-4">
                 <ShieldCheck className="w-5 h-5" />
               </div>
@@ -338,7 +327,7 @@ export const Home: React.FC = () => {
               </p>
             </Card>
 
-            <Card className="p-6 bg-slate-50 border-slate-200" hoverable>
+            <Card className="p-6 bg-slate-50 border-slate-200 hover-frame-shake" hoverable>
               <div className="w-11 h-11 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center mb-4">
                 <Sparkles className="w-5 h-5" />
               </div>
@@ -350,7 +339,7 @@ export const Home: React.FC = () => {
               </p>
             </Card>
 
-            <Card className="p-6 bg-slate-50 border-slate-200" hoverable>
+            <Card className="p-6 bg-slate-50 border-slate-200 hover-frame-shake" hoverable>
               <div className="w-11 h-11 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-4">
                 <Wallet className="w-5 h-5" />
               </div>
@@ -362,7 +351,7 @@ export const Home: React.FC = () => {
               </p>
             </Card>
 
-            <Card className="p-6 bg-slate-50 border-slate-200" hoverable>
+            <Card className="p-6 bg-slate-50 border-slate-200 hover-frame-shake" hoverable>
               <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center mb-4">
                 <BedDouble className="w-5 h-5" />
               </div>
@@ -461,7 +450,7 @@ export const Home: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-1 mb-3 text-amber-500">
                       {[...Array(rev.rating)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-500" />
+                        <Star key={i} className="w-4 h-4 fill-amber-500 anim-star-flash" />
                       ))}
                     </div>
                     <p className="text-sm text-slate-700 leading-relaxed mb-4">

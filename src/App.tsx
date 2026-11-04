@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { I18nProvider } from './i18n/I18nContext.tsx';
 import { ToastProvider } from './components/ui/Toast.tsx';
+import { GlobalClickEffects } from './components/common/GlobalClickEffects.tsx';
 
 // Layouts
 import { PublicLayout } from './layouts/PublicLayout.tsx';
@@ -40,6 +41,7 @@ export default function App() {
     <I18nProvider>
       <ToastProvider>
         <BrowserRouter>
+          <GlobalClickEffects />
           <React.Suspense fallback={<div role="status" className="min-h-[40vh] flex items-center justify-center text-sm font-medium text-teal-800">Loading page…</div>}>
           <Routes>
             {/* Public Website Routes */}

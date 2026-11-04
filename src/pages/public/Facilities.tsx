@@ -49,7 +49,7 @@ export const Facilities: React.FC = () => {
             const desc = pickLang(fac, 'description', lang);
 
             return (
-              <Card key={fac.id} className="p-6 text-start flex flex-col justify-between" hoverable>
+              <Card key={fac.id} className="p-6 text-start flex flex-col justify-between hover-light-expand" hoverable>
                 <div>
                   <div className="w-12 h-12 rounded-xl bg-teal-50 border border-teal-200/80 text-teal-700 flex items-center justify-center mb-4">
                     <FacilityIcon
@@ -71,7 +71,7 @@ export const Facilities: React.FC = () => {
         </div>
 
         {/* Bottom CTA Card */}
-        <div className="bg-gradient-to-r from-teal-900 to-slate-900 text-white rounded-3xl p-8 sm:p-12 text-center shadow-xl">
+        <div className="bg-gradient-to-r from-teal-900 to-slate-900 text-white rounded-3xl p-8 sm:p-12 text-center shadow-xl anim-light-expand">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-3">
             {t('facilities.cta')}
           </h3>

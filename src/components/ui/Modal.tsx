@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
+import { triggerPastelBomb } from '../../utils/pastelBomb.ts';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  disablePastelBomb?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -16,7 +18,8 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   footer,
-  maxWidth = 'lg'
+  maxWidth = 'lg',
+  disablePastelBomb = false
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +33,10 @@ export const Modal: React.FC<ModalProps> = ({
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
+      if (!disablePastelBomb) {
+        // Trigger celebratory pastel bomb explosion
+        triggerPastelBomb();
+      }
     } else {
       document.body.style.overflow = '';
     }
@@ -38,7 +45,7 @@ export const Modal: React.FC<ModalProps> = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, disablePastelBomb]);
 
   if (!isOpen) return null;
 
@@ -63,7 +70,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`w-full ${maxWidthClasses} bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform transition-all duration-200 max-h-[90vh] flex flex-col`}
+        className={`w-full ${maxWidthClasses} bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transform anim-pastel-pop max-h-[90vh] flex flex-col`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
           {title ? (

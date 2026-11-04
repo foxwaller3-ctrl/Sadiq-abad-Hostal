@@ -27,6 +27,7 @@ import { pickLang, normalizeImageUrl } from '../utils/helpers.ts';
 import type { HostelInfo } from '../types/index.ts';
 import { useI18n } from '../i18n/I18nContext.tsx';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher.tsx';
+import { ScrollAnimationObserver } from '../components/common/ScrollAnimationObserver.tsx';
 
 export const AdminLayout: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -291,6 +292,7 @@ export const AdminLayout: React.FC = () => {
 
         {/* Admin Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+          <ScrollAnimationObserver />
           <Outlet />
         </main>
       </div>

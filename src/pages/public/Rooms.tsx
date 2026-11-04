@@ -178,7 +178,7 @@ export const Rooms: React.FC = () => {
                   : t('rooms.soldOut');
 
               return (
-                <Card key={room.id} className="overflow-hidden flex flex-col justify-between" hoverable>
+                <Card key={room.id} className="overflow-hidden flex flex-col justify-between hover-frame-shake" hoverable>
                   <div>
                     {/* Fixed aspect ratio 4:3 for distinct room photo */}
                     <div
